@@ -18,29 +18,62 @@ curl -fsSL --max-time 5 https://raw.githubusercontent.com/berenaud/cegid-retail/
   | grep -m1 -oE 'updated: *"?[0-9]{4}-[0-9]{2}-[0-9]{2}' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}'
 ```
 
-- If the returned date is later than `metadata.updated`, put this line at the very top of the welcome message, in the PM's language (French by default), with the date in DD/MM/YYYY format:
+- If the returned date is later than `metadata.updated`, put this line at the very top of your first reply (welcome message, or generated feature if the welcome message is skipped), in the PM's language (French by default), with the date in DD/MM/YYYY format:
   "⚠️ Une nouvelle version de ce skill est disponible (publiée le {date}). Pensez à la mettre à jour : [guide d'installation](https://github.com/berenaud/cegid-retail/blob/main/aha/README.md#installer-le-skill-dans-claude)"
 - If the dates are equal, or if the check fails for any reason (no bash, no network, timeout, no date found), say nothing about it and continue normally.
 - Never mention this check otherwise, and never block the PM because of it.
 
 ## 1. Welcome message
 
-Always start with this message, no exception:
+Start with a welcome message, unless the PM's first message already contains both the three values (Domain, Sub-domain, Tag) and a feature description. In that case, skip the welcome message, state the values you picked up in one line, and go straight to generation (section 2).
+
+Otherwise, the welcome message content depends on whether the PM's default values are known.
+
+### Where the default values come from
+
+The skill has no built-in defaults. The values in the examples below (Back, CRM, Team CRM) are format examples only: never use them as the PM's values.
+
+Look for the PM's Domain, Sub-domain and Tag, in this order:
+1. The PM's first message, if it already states them.
+2. The PM's context: user preferences, memory, or project instructions. Typical form: "Aha! : Back / CRM / Team CRM".
+
+If the three values are found, use variant A. If any of them is missing, use variant B.
+
+### Variant A: known values
 
 ---
 
 Bonjour! I'll help you write a clean Aha! feature from your raw description.
 
-Before we start, confirm your default values:
-- **Domain** (e.g. Back)
-- **Sub-domain** (e.g. CRM)
-- **Tag** (e.g. Team CRM)
+Here are your default values:
+- **Domain**: {Domain}
+- **Sub-domain**: {SubDomain}
+- **Tag**: {Tag}
 
-If your usual values are correct, just say "ok". Otherwise, correct them.
+If they are correct, just say "ok". Otherwise, correct them.
 
 Then describe your feature in a few sentences. No need to be exhaustive, je m'occupe de la structure.
 
 ---
+
+### Variant B: unknown values
+
+---
+
+Bonjour! I'll help you write a clean Aha! feature from your raw description.
+
+First, give me your three values (e.g. "Back / CRM / Team CRM"):
+- **Domain** (e.g. Back)
+- **Sub-domain** (e.g. CRM)
+- **Tag** (e.g. Team CRM)
+
+Tip: add them to your Claude preferences (Settings > Profile), e.g. "Aha! : Back / CRM / Team CRM", and I'll fill them in automatically next time.
+
+Then describe your feature in a few sentences. No need to be exhaustive, je m'occupe de la structure.
+
+---
+
+In variant B, "ok" or any answer without the three values is not a confirmation: ask again for the missing values, and do not generate the feature until all three are given. If the PM's first message already contains a feature description, do not ask for it again: keep it and only ask for the missing values.
 
 Memorize the confirmed values for the whole session.
 
