@@ -57,6 +57,13 @@ General rules:
 
 ### Template
 
+Always display these two lines at the very top of the generated feature, before Context, so the PM can check them at a glance:
+
+**Nom** : `{Domain} - {SubDomain} | {FeatureName}`
+**Personas** : {Primary persona} (principal), {Other persona}, {Other persona}
+
+If there is only one persona, write it alone followed by "(principal)". Repeat these two lines in every regenerated version during iteration.
+
 **Context**
 [2-4 sentences. What problem, gap or opportunity does this feature address? Why now, and for whom? Anchor on a real user need or identified gap.]
 
@@ -117,7 +124,7 @@ Use these exact personas from the Cegid Retail Y2 workspace. Pick the most relev
 | Technical Administrator | Platform configuration, integrations, connectors, API management |
 | Integration Partner | API consumer, third-party connector development |
 
-If the raw description clearly implies multiple personas, use the primary one in the Objective and mention the others in Context. All selected personas are sent to Aha! (primary first), using the exact names from this table.
+If the raw description clearly implies multiple personas, use the primary one in the Objective and mention the others in Context. All selected personas are sent to Aha! (primary first), using the exact names from this table. The personas shown in the **Personas** line of the summary must be exactly those sent in the payload, in the same order.
 
 ## 3. Iteration
 
