@@ -15,6 +15,37 @@ Page : https://berenaud.github.io/cegid-retail/aha/
 
 ### Fonctionnement
 
+```mermaid
+sequenceDiagram
+    actor PM as Moi (PM)
+    participant C as Claude + skill
+    participant P as Page Publisher
+    participant A as Aha!
+
+    PM->>C: « Je veux créer une feature »
+    C-->>PM: Message d'accueil : domaine, sous-domaine, tag ?
+    PM->>C: Je confirme et je décris ma feature
+    C-->>PM: Feature rédigée (6 sections + persona)
+    loop Tant que ce n'est pas bon
+        PM->>C: Je demande des corrections
+        C-->>PM: Feature mise à jour
+    end
+    PM->>C: « C'est bon »
+    Note over C: Vérification de la Definition of Ready
+    C-->>PM: Lien vers la page, avec la feature encodée dedans
+    PM->>P: Je clique sur le lien
+    Note over P: 1re fois seulement : je saisis ma clé API Aha!
+    P->>A: Récupère releases, epics, initiatives, personas
+    A-->>P: Listes du produit
+    PM->>P: Je choisis la release (et si besoin epic, initiative)
+    PM->>P: Je clique sur « Publier sur Aha! »
+    P->>A: Crée la feature à mon nom
+    A-->>P: Référence de la feature créée
+    P-->>PM: Lien « Voir dans Aha! »
+```
+
+En détail :
+
 1. Dans Claude, le skill aide le PM à rédiger la feature, vérifie la Definition of Ready, puis génère un lien vers la page.
 2. La feature est encodée dans le lien, après `#data=`. Cette partie n'est jamais envoyée au serveur : la feature ne transite pas par GitHub.
 3. La page récupère les releases, épics, initiatives et personas du produit via l'API de `cegid.aha.io`.
@@ -24,11 +55,30 @@ Ouverte sans lien généré par le skill, la page affiche un écran « pas de do
 
 ### Installer le skill dans Claude
 
-1. Télécharger le dossier `skill/cegid-retail-feature-generator`.
-2. Le compresser en zip, en gardant `SKILL.md` à la racine du dossier.
-3. L'ajouter dans les paramètres de Claude, section Skills.
+Le titre de cette section sert de lien depuis le skill et la page : ne pas le renommer.
 
-À chaque nouvelle version du skill, il faut le réinstaller.
+**1. Récupérer le skill**
+1. Sur la page GitHub du dépôt, cliquer sur le bouton vert **Code**, puis **Download ZIP**.
+2. Décompresser le fichier téléchargé, puis ouvrir `aha/skill/`.
+3. Compresser le dossier `cegid-retail-feature-generator` (le dossier lui-même, pas son contenu) :
+   - Windows : clic droit sur le dossier > **Envoyer vers** > **Dossier compressé**.
+   - Mac : clic droit sur le dossier > **Compresser**.
+
+Le zip doit contenir le dossier `cegid-retail-feature-generator`, avec `SKILL.md` à l'intérieur. Si `SKILL.md` est directement à la racine du zip, l'installation échoue.
+
+**2. Préparer Claude (une seule fois)**
+Dans Claude, aller dans **Settings > Capabilities** et vérifier que **Code execution and file creation** est activé. Les skills ne fonctionnent pas sans.
+
+**3. Installer**
+1. Aller dans **Customize > Skills** (sur certaines versions de Claude : **Settings > Capabilities**, section Skills).
+2. Cliquer sur **Upload skill** et choisir le zip.
+3. Vérifier que le skill est activé (interrupteur).
+
+**4. Vérifier**
+Dans une nouvelle conversation, écrire par exemple « Je veux créer une feature ». Claude doit répondre avec le message d'accueil du skill, qui demande le domaine, le sous-domaine et le tag.
+
+**Mettre à jour**
+Quand une nouvelle version est disponible (signalée par le skill au début d'une conversation, ou dans le footer de la page), supprimer l'ancienne version du skill dans Claude, puis refaire les étapes 1 et 3. Supprimer d'abord évite d'avoir deux versions actives en même temps.
 
 ### Première utilisation : le token Aha!
 
@@ -91,6 +141,37 @@ Le lien contient un JSON encodé en base64url (UTF-8) :
 
 ### How it works
 
+```mermaid
+sequenceDiagram
+    actor PM as Me (PM)
+    participant C as Claude + skill
+    participant P as Publisher page
+    participant A as Aha!
+
+    PM->>C: "I want to create a feature"
+    C-->>PM: Welcome message: domain, sub-domain, tag?
+    PM->>C: I confirm and describe my feature
+    C-->>PM: Written feature (6 sections + persona)
+    loop Until it is right
+        PM->>C: I ask for changes
+        C-->>PM: Updated feature
+    end
+    PM->>C: "Looks good"
+    Note over C: Definition of Ready check
+    C-->>PM: Link to the page, with the feature encoded in it
+    PM->>P: I click the link
+    Note over P: First time only: I enter my Aha! API key
+    P->>A: Fetches releases, epics, initiatives, personas
+    A-->>P: Product lists
+    PM->>P: I pick the release (and optionally epic, initiative)
+    PM->>P: I click "Push to Aha!"
+    P->>A: Creates the feature under my name
+    A-->>P: Reference of the created feature
+    P-->>PM: "View in Aha!" link
+```
+
+In detail:
+
 1. In Claude, the skill helps the PM write the feature, checks the Definition of Ready, then generates a link to the page.
 2. The feature is encoded in the link, after `#data=`. This part is never sent to the server: the feature never goes through GitHub.
 3. The page fetches the product's releases, epics, initiatives and personas from the `cegid.aha.io` API.
@@ -100,11 +181,30 @@ If opened without a link generated by the skill, the page shows a "no data" scre
 
 ### Installing the skill in Claude
 
-1. Download the `skill/cegid-retail-feature-generator` folder.
-2. Zip it, keeping `SKILL.md` at the root of the folder.
-3. Add it in Claude's settings, Skills section.
+The title of this section is linked from the skill and the page: do not rename it.
 
-Each new version of the skill must be reinstalled.
+**1. Get the skill**
+1. On the repository's GitHub page, click the green **Code** button, then **Download ZIP**.
+2. Unzip the downloaded file, then open `aha/skill/`.
+3. Zip the `cegid-retail-feature-generator` folder (the folder itself, not its contents):
+   - Windows: right-click the folder > **Send to** > **Compressed (zipped) folder**.
+   - Mac: right-click the folder > **Compress**.
+
+The zip must contain the `cegid-retail-feature-generator` folder, with `SKILL.md` inside it. If `SKILL.md` sits directly at the root of the zip, the upload fails.
+
+**2. Prepare Claude (once)**
+In Claude, go to **Settings > Capabilities** and make sure **Code execution and file creation** is enabled. Skills do not work without it.
+
+**3. Install**
+1. Go to **Customize > Skills** (on some versions of Claude: **Settings > Capabilities**, Skills section).
+2. Click **Upload skill** and pick the zip.
+3. Check that the skill is enabled (toggle).
+
+**4. Check**
+In a new conversation, write for instance "I want to create a feature". Claude should answer with the skill's welcome message, asking for the domain, sub-domain and tag.
+
+**Updating**
+When a new version is available (flagged by the skill at the start of a conversation, or in the page footer), delete the old version of the skill in Claude, then repeat steps 1 and 3. Deleting first avoids having two active versions at the same time.
 
 ### First use: your Aha! token
 
