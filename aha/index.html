@@ -865,10 +865,15 @@
   function changeToken() { clearToken(); renderPreview('preview-connect'); showView('connect'); }
 
   // Version de la page = dernier commit GitHub ayant modifié index.html
-  const GH_REPO = (() => {
+  // Ex. berenaud.github.io/cegid-retail/aha/index.html
+  //  -> dépôt "berenaud/cegid-retail", fichier "aha/index.html"
+  const GH = (() => {
     const owner = location.hostname.match(/^([^.]+)\.github\.io$/)?.[1];
-    const repo  = location.pathname.split('/').filter(Boolean)[0];
-    return owner && repo ? `${owner}/${repo}` : null;
+    const parts = location.pathname.split('/').filter(Boolean);
+    if (!owner || !parts.length) return null;
+    const repo = parts.shift();
+    if (!parts.length || location.pathname.endsWith('/')) parts.push('index.html');
+    return { repo: `${owner}/${repo}`, path: parts.join('/') };
   })();
   const LS_VERSION = 'cegid_aha_page_version';
 
@@ -885,13 +890,13 @@
   }
 
   async function loadPageVersion() {
-    if (!GH_REPO) { renderPageVersion(null); return; }
+    if (!GH) { renderPageVersion(null); return; }
     try {
       const cached = JSON.parse(localStorage.getItem(LS_VERSION) || 'null');
       if (cached && Date.now() - cached.t < 10 * 60 * 1000) { renderPageVersion(cached); return; }
     } catch {}
     try {
-      const res = await fetch(`https://api.github.com/repos/${GH_REPO}/commits?path=index.html&per_page=1`);
+      const res = await fetch(`https://api.github.com/repos/${GH.repo}/commits?path=${encodeURIComponent(GH.path)}&per_page=1`);
       if (!res.ok) throw new Error(res.status);
       const c = (await res.json())[0];
       const v = { t: Date.now(), sha: c.sha.slice(0, 7), date: c.commit.committer.date, url: c.html_url };
