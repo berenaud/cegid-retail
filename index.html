@@ -427,7 +427,8 @@
 
 <footer class="page-footer">
   Cegid Retail · Internal tool &nbsp;·&nbsp;
-  Page <span id="footer-page-version">…</span>
+  Page version <span id="footer-page-version">…</span>
+  <button id="footer-version-refresh" title="Actualiser la version" onclick="refreshPageVersion()" style="background:none;border:none;color:inherit;cursor:pointer;font-size:11px;padding:0 2px">↻</button>
   <span id="footer-skill-version"></span>
 </footer>
 
@@ -878,7 +879,8 @@
     const a = document.createElement('a');
     a.href = v.url; a.target = '_blank'; a.rel = 'noopener';
     a.style.color = 'inherit';
-    a.textContent = `${v.sha} · ${new Date(v.date).toLocaleDateString('fr-FR')}`;
+    a.textContent = new Date(v.date).toLocaleDateString('fr-FR');
+    a.title = `Commit ${v.sha}`;
     el.appendChild(a);
   }
 
@@ -896,6 +898,12 @@
       try { localStorage.setItem(LS_VERSION, JSON.stringify(v)); } catch {}
       renderPageVersion(v);
     } catch { document.getElementById('footer-page-version').textContent = 'version indisponible'; }
+  }
+
+  function refreshPageVersion() {
+    try { localStorage.removeItem(LS_VERSION); } catch {}
+    document.getElementById('footer-page-version').textContent = '…';
+    loadPageVersion();
   }
 
   (async function init() {
