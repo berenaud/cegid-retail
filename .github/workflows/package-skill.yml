@@ -1,0 +1,40 @@
+# Publie le skill sous forme de zip prêt à installer dans Claude.
+# Se déclenche à chaque modification du dossier du skill sur main,
+# ou à la main depuis l'onglet Actions.
+# Lien de téléchargement stable :
+# https://github.com/berenaud/cegid-retail/releases/download/skill-latest/cegid-retail-feature-generator.zip
+
+name: Package skill
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'aha/skill/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construire le zip
+        run: |
+          cd aha/skill
+          zip -r "$GITHUB_WORKSPACE/cegid-retail-feature-generator.zip" cegid-retail-feature-generator
+
+      - name: Publier la release skill-latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(grep -m1 -oE 'updated: *"?[0-9]{4}-[0-9]{2}-[0-9]{2}' aha/skill/cegid-retail-feature-generator/SKILL.md | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          gh release delete skill-latest --yes --cleanup-tag || true
+          gh release create skill-latest cegid-retail-feature-generator.zip \
+            --target "$GITHUB_SHA" \
+            --title "Skill $VERSION" \
+            --notes "Version du skill : $VERSION. Télécharger le zip ci-dessous et l'installer dans Claude." \
+            --latest
