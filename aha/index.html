@@ -415,7 +415,7 @@
   <div id="view-success" class="success-wrap hidden">
     <div class="success-icon">✓</div>
     <p class="success-title">Feature created</p>
-    <a id="success-link" href="#" target="_blank" class="feature-ref" id="success-ref" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer">
+    <a id="success-link" href="#" target="_blank" class="feature-ref" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer">
       <span id="success-ref-text">—</span>
       <span style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:var(--link);font-size:13px;flex-shrink:0">
         View in Aha!
@@ -468,6 +468,10 @@
     'Network error, check your connection or API key.': FR ? 'Erreur réseau, vérifie ta connexion ou ta clé API.' : 'Network error, check your connection or API key.',
     'Error':                       FR ? 'Erreur' : 'Error',
     'Persona not found in Aha!, add it by hand:': FR ? 'Persona introuvable dans Aha!, à ajouter à la main :' : 'Persona not found in Aha!, add it by hand:',
+    'Unknown in Aha!, will not be set:': FR ? 'Inconnu dans Aha!, ne sera pas renseigné :' : 'Unknown in Aha!, will not be set:',
+    'Could not check personas in Aha!, they will not be set.': FR ? 'Impossible de vérifier les personas dans Aha!, ils ne seront pas renseignés.' : 'Could not check personas in Aha!, they will not be set.',
+    'Name too long': FR ? 'Nom trop long' : 'Name too long',
+    'characters, 79 max. Generate the link again from the skill.': FR ? 'caractères, 79 maximum. Régénère le lien depuis le skill.' : 'characters, 79 max. Generate the link again from the skill.',
   };
 
   function t(key) { return i18n[key] || key; }
@@ -534,13 +538,24 @@
   function renderPreview(id) {
     if (!feature) return;
     const nameLen = feature.name.length;
-    const tooLong = nameLen > 80;
-    const warning = tooLong
-      ? `<div style="margin-top:7px;font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:4px 9px">⚠ Name is ${nameLen} chars — Aha! truncates after ~80. Consider shortening.</div>`
+    const warnBox = (msg) => `<div style="margin-top:7px;font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:4px 9px">⚠ ${escHtml(msg)}</div>`;
+    let warning = nameLen >= 80
+      ? warnBox(`${t('Name too long')} (${nameLen} ${t('characters, 79 max. Generate the link again from the skill.')})`)
       : '';
-    const personas = (feature.personas || []).map(p =>
-      `<span style="background:rgba(112,128,200,0.15);color:var(--pill-color);border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500">${escHtml(p)}</span>`
-    ).join('');
+    // Personas : window._ahaPersonas vaut undefined (pas encore chargés),
+    // null (appel Aha! en échec) ou la liste des personas du produit.
+    const known   = window._ahaPersonas;
+    const isKnown = n => Array.isArray(known) && known.some(k => normName(k.name) === normName(n));
+    const unknown = Array.isArray(known) ? (feature.personas || []).filter(n => !isKnown(n)) : [];
+    if (known === null && (feature.personas || []).length) warning += warnBox(t('Could not check personas in Aha!, they will not be set.'));
+    if (unknown.length) warning += warnBox(`${t('Unknown in Aha!, will not be set:')} ${unknown.join(', ')}`);
+    const personas = (feature.personas || []).map(p => {
+      const bad = unknown.includes(p);
+      const style = bad
+        ? 'background:#fffbeb;color:#b45309;border:1px solid #fcd34d;text-decoration:line-through'
+        : 'background:rgba(112,128,200,0.15);color:var(--pill-color)';
+      return `<span style="${style};border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500">${escHtml(p)}</span>`;
+    }).join('');
     document.getElementById(id).innerHTML = `
       <div class="preview-name">${escHtml(feature.name)}</div>
       <div class="preview-meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">
@@ -582,58 +597,28 @@
   async function loadData() {
     showView('loading'); renderPreview('preview-loading');
     const p = encodeURIComponent(feature.product);
-    // Fetch all initiatives with pagination
-    async function fetchAllPersonas(product) {
-      try {
-        const res = await ahaFetch(`/products/${product}/personas?per_page=200`);
-        return res.personas || [];
-      } catch { return []; }
-    }
-
-    async function fetchAllInitiatives(product) {
-      const first = await ahaFetch(`/products/${product}/initiatives?per_page=200&page=1`);
-      let all = first.initiatives || [];
+    // Récupère toutes les pages d'une liste Aha! (releases, epics, initiatives)
+    async function fetchAll(product, kind) {
+      const url = n => `/products/${product}/${kind}?per_page=200&page=${n}`;
+      const first = await ahaFetch(url(1));
+      let all = first[kind] || [];
       const total = first.pagination?.total_pages || 1;
       if (total > 1) {
-        const pages = [];
-        for (let p = 2; p <= total; p++) pages.push(ahaFetch(`/products/${product}/initiatives?per_page=200&page=${p}`));
-        const rest = await Promise.all(pages);
-        rest.forEach(r => { all = all.concat(r.initiatives || []); });
+        const rest = await Promise.all(Array.from({ length: total - 1 }, (_, i) => ahaFetch(url(i + 2))));
+        rest.forEach(r => { all = all.concat(r[kind] || []); });
       }
       return all;
     }
-    async function fetchAllReleases(product) {
-      const first = await ahaFetch(`/products/${product}/releases?per_page=200&page=1`);
-      let all = first.releases || [];
-      const total = first.pagination?.total_pages || 1;
-      if (total > 1) {
-        const pages = [];
-        for (let p = 2; p <= total; p++) pages.push(ahaFetch(`/products/${product}/releases?per_page=200&page=${p}`));
-        const rest = await Promise.all(pages);
-        rest.forEach(r => { all = all.concat(r.releases || []); });
-      }
-      return all;
-    }
-
-    // Fetch all epics with pagination
-    async function fetchAllEpics(product) {
-      const first = await ahaFetch(`/products/${product}/epics?per_page=200&page=1`);
-      let all = first.epics || [];
-      const total = first.pagination?.total_pages || 1;
-      if (total > 1) {
-        const pages = [];
-        for (let p = 2; p <= total; p++) pages.push(ahaFetch(`/products/${product}/epics?per_page=200&page=${p}`));
-        const rest = await Promise.all(pages);
-        rest.forEach(r => { all = all.concat(r.epics || []); });
-      }
-      return all;
+    // Personas : une erreur ne bloque pas la page, on renvoie null pour la signaler
+    async function fetchPersonas(product) {
+      try { return await fetchAll(product, 'personas'); } catch { return null; }
     }
 
     const [allReleases, allEpics, allInitiatives, allPersonas] = await Promise.all([
-      fetchAllReleases(p),
-      fetchAllEpics(p),
-      fetchAllInitiatives(p),
-      fetchAllPersonas(p),
+      fetchAll(p, 'releases'),
+      fetchAll(p, 'epics'),
+      fetchAll(p, 'initiatives'),
+      fetchPersonas(p),
     ]);
     window._ahaPersonas = allPersonas;
 
@@ -670,7 +655,7 @@
     const relSel  = document.getElementById('release-select');
     const pushBtn = document.getElementById('push-btn');
     const syncBtn = () => { pushBtn.disabled = !relSel.value; };
-    relSel.addEventListener('change', syncBtn);
+    relSel.onchange = syncBtn;
     syncBtn();
     renderPreview('preview-select');
     showView('select');
@@ -690,7 +675,7 @@
     // Personas : champ personnalisé "personas" de la feature, qui attend
     // une liste d'identifiants. On retrouve chaque id à partir du nom envoyé par le skill.
     const known   = window._ahaPersonas || [];
-    const norm    = x => String(x || '').trim().toLowerCase();
+    const norm    = normName;
     const wanted  = feature.personas || [];
     const matched = wanted.map(n => known.find(k => norm(k.name) === norm(n))).filter(Boolean);
     const missing = wanted.filter(n => !known.some(k => norm(k.name) === norm(n)));
@@ -716,7 +701,6 @@
       document.getElementById('success-ref-text').innerHTML =
         `<span style="opacity:0.7;margin-right:8px">${escHtml(featureRef || '—')}</span>${escHtml(data.feature?.name || feature.name)}`;
       document.getElementById('success-link').href = data.feature?.url || '#';
-      document.getElementById('success-link').href        = data.feature?.url || '#';
       const warn = document.getElementById('success-warning');
       warn.textContent = missing.length
         ? `${t('Persona not found in Aha!, add it by hand:')} ${missing.join(', ')}`
@@ -732,8 +716,11 @@
   let allInitiativesData = [];
   let activeInitiativeIdx = -1;
 
+  let initiativeBound = false;
   function initInitiativeAutocomplete(initiatives) {
     allInitiativesData = initiatives;
+    if (initiativeBound) return;
+    initiativeBound = true;
     const inp  = document.getElementById('initiative-input');
     const drop = document.getElementById('initiative-dropdown');
     inp.addEventListener('input', () => {
@@ -806,9 +793,13 @@
 
 
   let activeIdx    = -1;
+  let allEpicsData = [];
+  let epicBound    = false;
 
   function initEpicAutocomplete(epics) {
     allEpicsData = epics;
+    if (epicBound) return;
+    epicBound = true;
     const inp  = document.getElementById('epic-input');
     const drop = document.getElementById('epic-dropdown');
 
@@ -832,7 +823,7 @@
       if (inp.value.trim()) { renderDropdown(allEpicsData.filter(e => e.name.toLowerCase().includes(inp.value.trim().toLowerCase()))); drop.classList.add('open'); }
     });
 
-    document.addEventListener('click', e => { if (!e.target.closest('.ac-wrap')) drop.classList.remove('open'); });
+    document.addEventListener('click', e => { if (!e.target.closest('#epic-input') && !e.target.closest('#epic-dropdown')) drop.classList.remove('open'); });
   }
 
   function renderDropdown(filtered) {
@@ -883,6 +874,8 @@
     if (epic) selectEpic(epic.id, epic.name);
   }
 
+
+  function normName(x) { return String(x ?? '').trim().toLowerCase(); }
 
   function escHtml(s) {
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
