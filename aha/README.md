@@ -23,7 +23,7 @@ sequenceDiagram
     participant A as Aha!
 
     PM->>C: « Je veux créer une feature »
-    C-->>PM: Message d'accueil : domaine, sous-domaine, tag ?
+    C-->>PM: Message d'accueil : domaine, sous-domaine ?
     PM->>C: Je confirme et je décris ma feature
     C-->>PM: Feature rédigée (6 sections + persona)
     loop Tant que ce n'est pas bon
@@ -66,7 +66,7 @@ Ce zip est reconstruit automatiquement à chaque modification du skill (workflow
 **2. Préparer Claude (une seule fois)**
 Dans Claude, aller dans **Settings > Capabilities** et vérifier que **Code execution and file creation** est activé. Les skills ne fonctionnent pas sans.
 
-Conseil : ajouter ses valeurs Aha! dans ses préférences Claude (**Settings > Profile**), par exemple « Aha! : Back / CRM / Team CRM ». Le skill les reprend automatiquement au lieu de les demander.
+Conseil : ajouter ses valeurs Aha! dans ses préférences Claude (**Settings > Profile**), par exemple « Aha! : Back / CRM ». Le skill les reprend automatiquement au lieu de les demander. Les tags sont déduits tout seuls (voir « Tags » plus bas).
 
 **3. Installer**
 1. Aller dans **Customize > Skills** (sur certaines versions de Claude : **Settings > Capabilities**, section Skills).
@@ -74,10 +74,22 @@ Conseil : ajouter ses valeurs Aha! dans ses préférences Claude (**Settings > P
 3. Vérifier que le skill est activé (interrupteur).
 
 **4. Vérifier**
-Dans une nouvelle conversation, écrire par exemple « Je veux créer une feature ». Claude doit répondre avec le message d'accueil du skill, qui affiche ou demande le domaine, le sous-domaine et le tag.
+Dans une nouvelle conversation, écrire par exemple « Je veux créer une feature ». Claude doit répondre avec le message d'accueil du skill, qui affiche ou demande le domaine et le sous-domaine.
 
 **Mettre à jour**
 Quand une nouvelle version est disponible (signalée par le skill au début d'une conversation, ou dans le footer de la page), supprimer l'ancienne version du skill dans Claude, puis refaire les étapes 1 et 3. Supprimer d'abord évite d'avoir deux versions actives en même temps.
+
+### Tags
+
+Le PM ne saisit plus de tag. Le skill en déduit deux à partir du domaine et du sous-domaine : `Domaine {Domaine}` et `Team {Sous-domaine}` (par exemple « Domaine Back » et « Team CRM »).
+
+Le skill affiche toujours les tags qu'il va ajouter. Si la règle ne correspond pas à l'équipe, on précise ses tags dans ses préférences Claude, après « Tags : » : « Aha! : Back / CRM / Tags : Domaine Back, Team CRM Fidélité ». On peut aussi les corriger en cours de conversation.
+
+Avant publication, la page vérifie que chaque tag existe déjà dans Aha! :
+- trouvé : il est envoyé, avec l'orthographe exacte d'Aha! (une différence de majuscules est corrigée) ;
+- introuvable : il est barré dans l'aperçu et n'est pas envoyé, pour ne jamais créer de mauvais tag.
+
+L'API Aha! ne permet pas de lister les tags. La page cherche donc une feature qui porte déjà ce tag. Conséquence : un tag créé dans Aha! mais jamais utilisé sur une feature est vu comme introuvable. Il suffit de l'ajouter à la main sur la feature une première fois.
 
 ### Première utilisation : le token Aha!
 
@@ -115,7 +127,7 @@ Le lien contient un JSON encodé en base64url (UTF-8) :
 ```json
 {
   "name": "Back - CRM | Nom de la feature (moins de 80 caractères)",
-  "tags": "Team CRM",
+  "tags": ["Domaine Back", "Team CRM"],
   "product": "RETAILY2",
   "personas": ["Store Cashier"],
   "skill_updated": "2026-09-23",
@@ -148,7 +160,7 @@ sequenceDiagram
     participant A as Aha!
 
     PM->>C: "I want to create a feature"
-    C-->>PM: Welcome message: domain, sub-domain, tag?
+    C-->>PM: Welcome message: domain, sub-domain?
     PM->>C: I confirm and describe my feature
     C-->>PM: Written feature (6 sections + persona)
     loop Until it is right
@@ -191,7 +203,7 @@ This zip is rebuilt automatically on every change to the skill (`Package skill` 
 **2. Prepare Claude (once)**
 In Claude, go to **Settings > Capabilities** and make sure **Code execution and file creation** is enabled. Skills do not work without it.
 
-Tip: add your Aha! values to your Claude preferences (**Settings > Profile**), e.g. "Aha! : Back / CRM / Team CRM". The skill picks them up instead of asking.
+Tip: add your Aha! values to your Claude preferences (**Settings > Profile**), e.g. "Aha! : Back / CRM". The skill picks them up instead of asking. Tags are derived automatically (see "Tags" below).
 
 **3. Install**
 1. Go to **Customize > Skills** (on some versions of Claude: **Settings > Capabilities**, Skills section).
@@ -199,10 +211,22 @@ Tip: add your Aha! values to your Claude preferences (**Settings > Profile**), e
 3. Check that the skill is enabled (toggle).
 
 **4. Check**
-In a new conversation, write for instance "I want to create a feature". Claude should answer with the skill's welcome message, showing or asking for the domain, sub-domain and tag.
+In a new conversation, write for instance "I want to create a feature". Claude should answer with the skill's welcome message, showing or asking for the domain and sub-domain.
 
 **Updating**
 When a new version is available (flagged by the skill at the start of a conversation, or in the page footer), delete the old version of the skill in Claude, then repeat steps 1 and 3. Deleting first avoids having two active versions at the same time.
+
+### Tags
+
+The PM no longer types a tag. The skill derives two from the domain and sub-domain: `Domaine {Domain}` and `Team {Sub-domain}` (e.g. "Domaine Back" and "Team CRM").
+
+The skill always shows the tags it will add. If the rule does not fit the team, set your tags in your Claude preferences, after "Tags :": "Aha! : Back / CRM / Tags : Domaine Back, Team CRM Fidélité". They can also be corrected during the conversation.
+
+Before publishing, the page checks that each tag already exists in Aha!:
+- found: it is sent, with Aha!'s exact spelling (a case difference is fixed);
+- not found: it is struck through in the preview and not sent, so a wrong tag is never created.
+
+The Aha! API cannot list tags. The page therefore looks for a feature that already carries the tag. As a result, a tag created in Aha! but never used on a feature is seen as not found. Just add it by hand on the feature the first time.
 
 ### First use: your Aha! token
 
@@ -240,7 +264,7 @@ The link contains a base64url-encoded (UTF-8) JSON object:
 ```json
 {
   "name": "Back - CRM | Feature name (under 80 characters)",
-  "tags": "Team CRM",
+  "tags": ["Domaine Back", "Team CRM"],
   "product": "RETAILY2",
   "personas": ["Store Cashier"],
   "skill_updated": "2026-09-23",
