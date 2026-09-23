@@ -468,8 +468,8 @@
     'Network error, check your connection or API key.': FR ? 'Erreur réseau, vérifie ta connexion ou ta clé API.' : 'Network error, check your connection or API key.',
     'Error':                       FR ? 'Erreur' : 'Error',
     'Persona not found in Aha!, add it by hand:': FR ? 'Persona introuvable dans Aha!, à ajouter à la main :' : 'Persona not found in Aha!, add it by hand:',
-    'Unknown in Aha!, will not be set:': FR ? 'Inconnu dans Aha!, ne sera pas renseigné :' : 'Unknown in Aha!, will not be set:',
-    'Could not check personas in Aha!, they will not be set.': FR ? 'Impossible de vérifier les personas dans Aha!, ils ne seront pas renseignés.' : 'Could not check personas in Aha!, they will not be set.',
+    'Tag not found in Aha!, it will not be added:': FR ? 'Tag introuvable dans Aha!, il ne sera pas ajouté :' : 'Tag not found in Aha!, it will not be added:',
+    'Could not check tags in Aha!, they will not be added.': FR ? 'Impossible de vérifier les tags dans Aha!, ils ne seront pas ajoutés.' : 'Could not check tags in Aha!, they will not be added.',
     'Name too long': FR ? 'Nom trop long' : 'Name too long',
     'characters, 79 max. Generate the link again from the skill.': FR ? 'caractères, 79 maximum. Régénère le lien depuis le skill.' : 'characters, 79 max. Generate the link again from the skill.',
   };
@@ -542,24 +542,24 @@
     let warning = nameLen >= 80
       ? warnBox(`${t('Name too long')} (${nameLen} ${t('characters, 79 max. Generate the link again from the skill.')})`)
       : '';
-    // Personas : window._ahaPersonas vaut undefined (pas encore chargés),
-    // null (appel Aha! en échec) ou la liste des personas du produit.
-    const known   = window._ahaPersonas;
-    const isKnown = n => Array.isArray(known) && known.some(k => normName(k.name) === normName(n));
-    const unknown = Array.isArray(known) ? (feature.personas || []).filter(n => !isKnown(n)) : [];
-    if (known === null && (feature.personas || []).length) warning += warnBox(t('Could not check personas in Aha!, they will not be set.'));
-    if (unknown.length) warning += warnBox(`${t('Unknown in Aha!, will not be set:')} ${unknown.join(', ')}`);
-    const personas = (feature.personas || []).map(p => {
-      const bad = unknown.includes(p);
-      const style = bad
+    // Tags : window._tagStatus vaut undefined (pas encore vérifiés),
+    // null (vérification en échec) ou { tag: nom exact dans Aha! | false }.
+    const status  = window._tagStatus;
+    const tags    = featureTags();
+    const notFound = status ? tags.filter(tg => !status[tg]) : [];
+    if (status === null && tags.length) warning += warnBox(t('Could not check tags in Aha!, they will not be added.'));
+    if (notFound.length) warning += warnBox(`${t('Tag not found in Aha!, it will not be added:')} ${notFound.join(', ')}`);
+    const pill = (txt, bad) => `<span style="${bad
         ? 'background:#fffbeb;color:#b45309;border:1px solid #fcd34d;text-decoration:line-through'
-        : 'background:rgba(112,128,200,0.15);color:var(--pill-color)';
-      return `<span style="${style};border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500">${escHtml(p)}</span>`;
-    }).join('');
+        : 'background:var(--pill-bg);color:var(--pill-color)'};border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500">${escHtml(txt)}</span>`;
+    const tagPills = tags.map(tg => pill(tg, status === null || notFound.includes(tg))).join('');
+    const personas = (feature.personas || []).map(p =>
+      `<span style="background:rgba(112,128,200,0.15);color:var(--pill-color);border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500">${escHtml(p)}</span>`
+    ).join('');
     document.getElementById(id).innerHTML = `
       <div class="preview-name">${escHtml(feature.name)}</div>
       <div class="preview-meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">
-        <span class="preview-pill">${escHtml(feature.tags)}</span>
+        ${tagPills}
         <span class="preview-pill">${escHtml(feature.product)}</span>
         ${personas}
       </div>
@@ -609,18 +609,37 @@
       }
       return all;
     }
-    // Personas : une erreur ne bloque pas la page, on renvoie null pour la signaler
-    async function fetchPersonas(product) {
-      try { return await fetchAll(product, 'personas'); } catch { return null; }
+    // Personas : chargés en arrière-plan, sans faire attendre l'écran.
+    // Seule la publication en a besoin (pour retrouver leurs identifiants).
+    window._personasPromise = fetchAll(p, 'personas').catch(() => null);
+
+    // Tags : l'API Aha! ne sait pas lister les tags. On cherche donc une feature
+    // (tous produits confondus) qui porte le tag. Trouvée : le tag existe, et on
+    // récupère son orthographe exacte. Aucune : le tag n'existe pas (ou n'a jamais
+    // servi sur une feature) et il ne sera pas envoyé.
+    async function checkTag(tag) {
+      const res  = await ahaFetch(`/features?tag=${encodeURIComponent(tag)}&per_page=5&fields=tags`);
+      const list = res.features || [];
+      if (!list.length) return false;
+      const all  = list.flatMap(f => Array.isArray(f.tags) ? f.tags : []).map(x => typeof x === 'string' ? x : x?.name);
+      if (!all.length) return tag; // champ tags absent de la réponse : on se fie au filtre
+      return all.find(x => normName(x) === normName(tag)) || false;
+    }
+    async function checkTags() {
+      try {
+        const tags = featureTags();
+        const res  = await Promise.all(tags.map(checkTag));
+        return Object.fromEntries(tags.map((tg, i) => [tg, res[i]]));
+      } catch { return null; }
     }
 
-    const [allReleases, allEpics, allInitiatives, allPersonas] = await Promise.all([
+    const [allReleases, allEpics, allInitiatives, tagStatus] = await Promise.all([
       fetchAll(p, 'releases'),
       fetchAll(p, 'epics'),
       fetchAll(p, 'initiatives'),
-      fetchPersonas(p),
+      checkTags(),
     ]);
-    window._ahaPersonas = allPersonas;
+    window._tagStatus = tagStatus;
 
     const releases = allReleases
       .filter(x => x.name?.startsWith('PI'))
@@ -674,18 +693,21 @@
     // la feature est créée dans la release, epic et initiative acceptent un nom ou un id.
     // Personas : champ personnalisé "personas" de la feature, qui attend
     // une liste d'identifiants. On retrouve chaque id à partir du nom envoyé par le skill.
-    const known   = window._ahaPersonas || [];
+    const known   = (await window._personasPromise) || [];
     const norm    = normName;
     const wanted  = feature.personas || [];
     const matched = wanted.map(n => known.find(k => norm(k.name) === norm(n))).filter(Boolean);
     const missing = wanted.filter(n => !known.some(k => norm(k.name) === norm(n)));
     const personaIds = [...new Set(matched.map(k => String(k.id)))];
+    // Tags : uniquement ceux trouvés dans Aha!, avec leur orthographe exacte
+    const status    = window._tagStatus || {};
+    const validTags = featureTags().map(tg => status[tg]).filter(Boolean);
 
     const payload = { feature: {
       name:          feature.name,
       description:   html,
       workflow_kind: { name: 'New' },
-      tags:          feature.tags,
+      ...(validTags.length ? { tags: validTags.join(', ') } : {}),
       ...(epicId       ? { epic:       epicId       } : {}),
       ...(initiativeId ? { initiative: initiativeId } : {}),
       ...(personaIds.length ? { custom_fields: { personas: personaIds } } : {}),
@@ -874,6 +896,12 @@
     if (epic) selectEpic(epic.id, epic.name);
   }
 
+
+  function featureTags() {
+    const raw = feature?.tags;
+    const list = Array.isArray(raw) ? raw : String(raw ?? '').split(',');
+    return [...new Set(list.map(x => String(x).trim()).filter(Boolean))];
+  }
 
   function normName(x) { return String(x ?? '').trim().toLowerCase(); }
 
