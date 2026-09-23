@@ -20,6 +20,7 @@ Pages et skills Claude pour le travail produit chez Cegid Retail. Chaque outil a
 
 ```
 cegid-retail/
+├── .nojekyll           sert les fichiers tels quels (ne pas supprimer)
 ├── index.html          page d'accueil
 ├── README.md
 └── aha/
@@ -33,6 +34,7 @@ cegid-retail/
 - **Le dépôt est public**, historique compris : jamais de token, de mot de passe, d'export de données ou d'exemple contenant de vraies données Cegid. Un skill qui contiendrait des informations sensibles va dans un dépôt privé séparé.
 - **Toutes les pages partagent le même stockage navigateur.** Une page du dépôt peut lire ce qu'une autre y enregistre, y compris un token. N'ajouter que des pages écrites ou relues par un mainteneur.
 - Préfixer les clés de stockage local par le nom de l'outil (ex. `cegid_aha_…`).
+- Ne pas supprimer `.nojekyll` : sans lui, GitHub Pages transforme les `SKILL.md` en pages HTML et la détection des mises à jour de skill ne fonctionne plus.
 
 ### Ajouter un outil
 
@@ -56,6 +58,7 @@ Pages and Claude skills for product work at Cegid Retail. Each tool has its own 
 
 ```
 cegid-retail/
+├── .nojekyll           serves files as is (do not delete)
 ├── index.html          home page
 ├── README.md
 └── aha/
@@ -69,6 +72,7 @@ cegid-retail/
 - **The repository is public**, history included: never commit tokens, passwords, data exports or samples containing real Cegid data. A skill containing sensitive information goes to a separate private repository.
 - **All pages share the same browser storage.** A page in this repository can read what another one stores there, tokens included. Only add pages written or reviewed by a maintainer.
 - Prefix local storage keys with the tool name (e.g. `cegid_aha_…`).
+- Do not delete `.nojekyll`: without it, GitHub Pages turns `SKILL.md` files into HTML pages and skill update detection stops working.
 
 ### Adding a tool
 
