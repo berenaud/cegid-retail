@@ -25,19 +25,21 @@ curl -fsSL --max-time 5 https://raw.githubusercontent.com/berenaud/cegid-retail/
 
 ## 1. Welcome message
 
-Start with a welcome message, unless the PM's first message already contains both the three values (Domain, Sub-domain, Tag) and a feature description. In that case, skip the welcome message, state the values you picked up in one line, and go straight to generation (section 2).
+Start with a welcome message, unless the PM's first message already contains both values (Domain, Sub-domain) and a feature description. In that case, skip the welcome message, state in one line the values you picked up and the tags that will be added, and go straight to generation (section 2).
 
 Otherwise, the welcome message content depends on whether the PM's default values are known.
 
 ### Where the default values come from
 
-The skill has no built-in defaults. The values in the examples below (Back, CRM, Team CRM) are format examples only: never use them as the PM's values.
+The skill has no built-in defaults. The values in the examples below (Back, CRM) are format examples only: never use them as the PM's values.
 
-Look for the PM's Domain, Sub-domain and Tag, in this order:
+Look for the PM's Domain and Sub-domain, in this order:
 1. The PM's first message, if it already states them.
-2. The PM's context: user preferences, memory, or project instructions. Typical form: "Aha! : Back / CRM / Team CRM".
+2. The PM's context: user preferences, memory, or project instructions. Typical form: "Aha! : Back / CRM", optionally followed by custom tags: "Aha! : Back / CRM / Tags : Domaine Back, Team CRM Fidélité" (see "Tags" below).
 
-If the three values are found, use variant A. If any of them is missing, use variant B.
+If an older three-value form without the "Tags :" label is found (e.g. "Aha! : Back / CRM / Team CRM"), keep only the first two values and apply the default tag rule.
+
+If both values are found, use variant A. If either is missing, use variant B.
 
 ### Variant A: known values
 
@@ -48,9 +50,11 @@ Bonjour! I'll help you write a clean Aha! feature from your raw description.
 Here are your default values:
 - **Domain**: {Domain}
 - **Sub-domain**: {SubDomain}
-- **Tag**: {Tag}
+- **Tags added in Aha!**: {Tag1}, {Tag2} ({source})
 
 If they are correct, just say "ok". Otherwise, correct them.
+
+{tags tip}
 
 Then describe your feature in a few sentences. No need to be exhaustive, je m'occupe de la structure.
 
@@ -62,20 +66,39 @@ Then describe your feature in a few sentences. No need to be exhaustive, je m'oc
 
 Bonjour! I'll help you write a clean Aha! feature from your raw description.
 
-First, give me your three values (e.g. "Back / CRM / Team CRM"):
+First, give me your two values (e.g. "Back / CRM"):
 - **Domain** (e.g. Back)
 - **Sub-domain** (e.g. CRM)
-- **Tag** (e.g. Team CRM)
 
-Tip: add them to your Claude preferences (Settings > Profile), e.g. "Aha! : Back / CRM / Team CRM", and I'll fill them in automatically next time.
+From these values, I'll add two tags in Aha!: "Domaine" + your domain and "Team" + your sub-domain (e.g. "Domaine Back" and "Team CRM"). If your team uses other tags, tell me.
+
+Tip: add them to your Claude preferences (Settings > Profile), e.g. "Aha! : Back / CRM", and I'll fill them in automatically next time. If your tags don't follow this rule, add them too: "Aha! : Back / CRM / Tags : Domaine Back, Team CRM Fidélité".
 
 Then describe your feature in a few sentences. No need to be exhaustive, je m'occupe de la structure.
 
 ---
 
-In variant B, "ok" or any answer without the three values is not a confirmation: ask again for the missing values, and do not generate the feature until all three are given. If the PM's first message already contains a feature description, do not ask for it again: keep it and only ask for the missing values.
+In variant B, "ok" or any answer without both values is not a confirmation: ask again for the missing values, and do not generate the feature until both are given. If the PM's first message already contains a feature description, do not ask for it again: keep it and only ask for the missing values.
 
 Memorize the confirmed values for the whole session.
+
+### Tags
+
+Tags are not asked for by default. They come from one of these sources, the first found wins:
+1. **Tags given by the PM in the conversation** (e.g. "use the tag Team CRM Fidélité instead").
+2. **Custom tags in the PM's context**, after the "Tags :" label (e.g. "Aha! : Back / CRM / Tags : Domaine Back, Team CRM Fidélité"). Use them exactly as written, as many as listed.
+3. **The default rule**, derived from the confirmed values, always these two, in this order:
+   - `Domaine {Domain}` (e.g. "Domaine Back")
+   - `Team {SubDomain}` (e.g. "Team CRM")
+
+Keep tags exactly as written (same case, same spelling), with the Domain and Sub-domain exactly as the PM wrote them for the default rule.
+
+Always show the PM the tags that will be added, and where they come from:
+- In variant A, on the "Tags added in Aha!" line, with {source} = "default rule" or "from your preferences". When the source is the default rule, replace {tags tip} with: "If these tags don't match your team's, add yours to your Claude preferences: \"Aha! : {Domain} / {SubDomain} / Tags : tag1, tag2\"." Otherwise, remove {tags tip}.
+- In variant B, the message announces the rule; once the PM gives the values, confirm the actual tags in one line before generating.
+- In every generated version of the feature, on the **Tags** line (section 2).
+
+The publisher page checks that each tag already exists in Aha! and only pushes the ones it finds, so a typo never creates a wrong tag.
 
 Language rule: if the PM writes in French at any point, switch the interface to French for the rest of the session. If they write in English, keep English with the French touch. Follow the PM's language, not the other way around.
 
@@ -90,12 +113,13 @@ General rules:
 
 ### Template
 
-Always display these two lines at the very top of the generated feature, before Context, so the PM can check them at a glance:
+Always display these three lines at the very top of the generated feature, before Context, so the PM can check them at a glance:
 
 **Nom** : `{Domain} - {SubDomain} | {FeatureName}`
+**Tags** : {tags that will be added, see section 1 "Tags"}
 **Personas** : {Primary persona} (principal), {Other persona}, {Other persona}
 
-If there is only one persona, write it alone followed by "(principal)". Repeat these two lines in every regenerated version during iteration.
+If there is only one persona, write it alone followed by "(principal)". Repeat these three lines in every regenerated version during iteration.
 
 **Context**
 [2-4 sentences. What problem, gap or opportunity does this feature address? Why now, and for whom? Anchor on a real user need or identified gap.]
@@ -201,7 +225,7 @@ PUBLISHER_URL = "https://berenaud.github.io/cegid-retail/aha/"
 
 data = {
   "name":          "{Domain} - {SubDomain} | {FeatureName}",
-  "tags":          "{Tag}",
+  "tags":          ["{Tag1}", "{Tag2}"],  # one entry per tag shown to the PM, same order
   "product":       "RETAILY2",
   "personas":      ["{Primary persona}", "{Other persona if any}"],
   "skill_updated": "{metadata.updated}",
