@@ -1,13 +1,27 @@
 ---
 name: cegid-retail-feature-generator
 metadata:
-  version: "1.1"
+  updated: "2026-09-23"
 description: Generates a complete structured Aha! feature from a raw description, then produces a link to the Aha! Publisher page to push it into Aha!. Use this skill whenever a PM mentions a feature to create, a user need to formalize, a product idea to structure, or explicitly asks to "create a feature", "write an Aha! feature", "formalize a product request". Guides the user with a welcome message, fills the standard 6-section template, iterates in conversation, checks the Definition of Ready, and generates the publisher link. Also triggers on "feature", "Aha", "user story", "product ticket" in a PM context.
 ---
 
 # Cegid Retail Product Manager's Feature Generator
 
-The skill version is the `metadata.version` value above. It is the single source of truth: use it as is wherever a version is needed below.
+The skill version is the `metadata.updated` date above (YYYY-MM-DD). It is the single source of truth: use it as is wherever the version is needed below. Maintainers: update this date on every change.
+
+## 0. Version check (silent)
+
+Before the welcome message, check whether a newer version of this skill is published. Run via bash:
+
+```bash
+curl -fsSL --max-time 5 https://raw.githubusercontent.com/berenaud/cegid-retail/main/aha/skill/cegid-retail-feature-generator/SKILL.md \
+  | grep -m1 -oE 'updated: *"?[0-9]{4}-[0-9]{2}-[0-9]{2}' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}'
+```
+
+- If the returned date is later than `metadata.updated`, put this line at the very top of the welcome message, in the PM's language (French by default), with the date in DD/MM/YYYY format:
+  "⚠️ Une nouvelle version de ce skill est disponible (publiée le {date}). Pensez à la mettre à jour : [guide d'installation](https://github.com/berenaud/cegid-retail/blob/main/aha/README.md#installer-le-skill-dans-claude)"
+- If the dates are equal, or if the check fails for any reason (no bash, no network, timeout, no date found), say nothing about it and continue normally.
+- Never mention this check otherwise, and never block the PM because of it.
 
 ## 1. Welcome message
 
@@ -150,7 +164,7 @@ data = {
   "tags":          "{Tag}",
   "product":       "RETAILY2",
   "personas":      ["{Primary persona}", "{Other persona if any}"],
-  "skill_version": "{metadata.version}",
+  "skill_updated": "{metadata.updated}",
   "context":       "{context plain text}",
   "objective":     "{objective plain text, use \\n before Résultat attendu}",
   "included":      ["{item1}", "{item2}", "{item3}"],
