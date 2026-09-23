@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
 <title>Aha! Feature Publisher · Cegid Retail</title>
 <style>
   :root {
@@ -911,6 +912,38 @@
     loadPageVersion();
   }
 
+  // Version du skill : date "updated" transmise dans le lien, comparée
+  // au SKILL.md publié à côté de la page (même site, pas d'appel externe).
+  const SKILL_PATH   = 'skill/cegid-retail-feature-generator/SKILL.md';
+  const SKILL_UPDATE = FR
+    ? 'https://github.com/berenaud/cegid-retail/blob/main/aha/README.md#installer-le-skill-dans-claude'
+    : 'https://github.com/berenaud/cegid-retail/blob/main/aha/README.md#installing-the-skill-in-claude';
+  const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+  const fmtDate  = d => new Date(`${d}T00:00:00`).toLocaleDateString('fr-FR');
+
+  async function renderSkillVersion() {
+    const el = document.getElementById('footer-skill-version');
+    const d  = feature?.skill_updated;
+    if (!d || !ISO_DATE.test(d)) {
+      if (feature?.skill_version) el.textContent = ` · Skill ${feature.skill_version}`;
+      return;
+    }
+    el.textContent = ` · Skill version ${fmtDate(d)}`;
+    try {
+      const res = await fetch(new URL(SKILL_PATH, location.href), { cache: 'no-cache' });
+      if (!res.ok) return;
+      const latest = (await res.text()).match(/^\s*updated:\s*["']?(\d{4}-\d{2}-\d{2})/m)?.[1];
+      if (!latest || latest <= d) return;
+      el.append(' · ');
+      const a = document.createElement('a');
+      a.href = SKILL_UPDATE; a.target = '_blank'; a.rel = 'noopener';
+      a.style.color = 'var(--link)'; a.style.fontWeight = '600';
+      a.textContent = FR ? `⚠ Nouvelle version du skill (${fmtDate(latest)}), mettez-le à jour`
+                         : `⚠ New skill version (${fmtDate(latest)}), please update`;
+      el.appendChild(a);
+    } catch {}
+  }
+
   (async function init() {
     loadPageVersion();
     feature = loadFromHash();
@@ -918,9 +951,7 @@
       showView('nodata');
       return;
     }
-    if (feature.skill_version) {
-      document.getElementById('footer-skill-version').textContent = ` · Skill ${feature.skill_version}`;
-    }
+    renderSkillVersion();
     const saved = localStorage.getItem(LS_TOKEN);
     if (saved) { try { await loadData(); return; } catch { localStorage.removeItem(LS_TOKEN); } }
     renderPreview('preview-connect');
