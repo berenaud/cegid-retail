@@ -42,7 +42,8 @@ Chaque utilisateur utilise sa propre clé API Aha!, à créer dans Aha! : **Sett
 ### Versions
 
 - **Page** : le footer affiche la date du dernier commit qui a modifié `aha/index.html`, avec un lien vers ce commit. L'information est gardée en cache 10 minutes, le bouton ↻ force sa mise à jour.
-- **Skill** : sa version est définie une seule fois, dans `metadata.version` du `SKILL.md`. Elle est transmise dans le lien et affichée dans le footer de la page. À incrémenter à chaque modification.
+- **Skill** : sa version est la date `metadata.updated` du `SKILL.md` (format AAAA-MM-JJ), à mettre à jour à chaque modification. Elle est transmise dans le lien et affichée dans le footer de la page.
+- **Mise à jour du skill** : si la version publiée sur GitHub est plus récente que celle utilisée, le skill le signale au début de la conversation, et la page l'indique dans son footer avec un lien vers ce guide.
 
 Si la page elle-même semble ancienne après une mise à jour : rechargement forcé avec **Ctrl+Shift+R** (Cmd+Shift+R sur Mac).
 
@@ -68,7 +69,7 @@ Le lien contient un JSON encodé en base64url (UTF-8) :
   "tags": "Team CRM",
   "product": "RETAILY2",
   "personas": ["Store Cashier"],
-  "skill_version": "1.1",
+  "skill_updated": "2026-09-23",
   "context": "…",
   "objective": "En tant que …\nRésultat attendu : …",
   "included": ["…"],
@@ -117,7 +118,8 @@ Each user uses their own Aha! API key, created in Aha!: **Settings > Developer >
 ### Versions
 
 - **Page**: the footer shows the date of the last commit that changed `aha/index.html`, linked to that commit. This is cached for 10 minutes; the ↻ button forces a refresh.
-- **Skill**: its version is defined once, in `metadata.version` of `SKILL.md`. It is passed in the link and shown in the page footer. Bump it on every change.
+- **Skill**: its version is the `metadata.updated` date in `SKILL.md` (YYYY-MM-DD format), to be updated on every change. It is passed in the link and shown in the page footer.
+- **Skill updates**: if the version published on GitHub is newer than the one in use, the skill says so at the start of the conversation, and the page shows it in its footer with a link to this guide.
 
 If the page itself looks outdated after an update: hard reload with **Ctrl+Shift+R** (Cmd+Shift+R on Mac).
 
@@ -143,7 +145,7 @@ The link contains a base64url-encoded (UTF-8) JSON object:
   "tags": "Team CRM",
   "product": "RETAILY2",
   "personas": ["Store Cashier"],
-  "skill_version": "1.1",
+  "skill_updated": "2026-09-23",
   "context": "…",
   "objective": "En tant que …\nRésultat attendu : …",
   "included": ["…"],
