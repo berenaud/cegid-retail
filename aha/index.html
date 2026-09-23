@@ -922,18 +922,18 @@
   const fmtDate  = d => new Date(`${d}T00:00:00`).toLocaleDateString('fr-FR');
 
   async function renderSkillVersion() {
-    const el = document.getElementById('footer-skill-version');
-    const d  = feature?.skill_updated;
-    if (!d || !ISO_DATE.test(d)) {
-      if (feature?.skill_version) el.textContent = ` · Skill ${feature.skill_version}`;
-      return;
-    }
-    el.textContent = ` · Skill version ${fmtDate(d)}`;
+    const el    = document.getElementById('footer-skill-version');
+    const d     = feature?.skill_updated;
+    const valid = typeof d === 'string' && ISO_DATE.test(d);
+    // Lien généré par un skill antérieur à la version datée : pas de date à afficher
+    el.textContent = valid
+      ? ` · Skill version ${fmtDate(d)}`
+      : (FR ? ' · Skill version ancienne (non datée)' : ' · Skill version: old (undated)');
     try {
       const res = await fetch(new URL(SKILL_PATH, location.href), { cache: 'no-cache' });
       if (!res.ok) return;
       const latest = (await res.text()).match(/^\s*updated:\s*["']?(\d{4}-\d{2}-\d{2})/m)?.[1];
-      if (!latest || latest <= d) return;
+      if (!latest || (valid && latest <= d)) return;
       el.append(' · ');
       const a = document.createElement('a');
       a.href = SKILL_UPDATE; a.target = '_blank'; a.rel = 'noopener';
