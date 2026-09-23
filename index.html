@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aha! Feature Publisher · Cegid Retail</title>
+<style>
+  :root {
+    --bg:             #f4f5fb;
+    --card-bg:        #ffffff;
+    --text:           #1a1a2e;
+    --text-muted:     #9ca3af;
+    --text-secondary: #6b7280;
+    --border:         #e5e7eb;
+    --border-focus:   #4361EE;
+    --input-bg:       #ffffff;
+    --preview-bg:     #f8f9ff;
+    --preview-border: #dde2f8;
+    --pill-bg:        rgba(67,97,238,0.10);
+    --pill-color:     #4361EE;
+    --select-arrow:   %236b7280;
+    --shadow:         0 2px 20px rgba(67,97,238,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    --sep-line:       #f3f4f6;
+    --ac-border:      #e5e7eb;
+    --ac-hover:       #f0f3ff;
+    --ac-text:        #1a1a2e;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:             #0f1117;
+      --card-bg:        #1a1d27;
+      --text:           #e2e4ef;
+      --text-muted:     #5a6080;
+      --text-secondary: #8892b0;
+      --border:         #2d3248;
+      --border-focus:   #6b7fd4;
+      --input-bg:       #12151f;
+      --preview-bg:     #12151f;
+      --preview-border: #2a2f48;
+      --pill-bg:        rgba(107,127,212,0.15);
+      --pill-color:     #8899dd;
+      --shadow:         0 2px 20px rgba(0,0,0,0.3), 0 1px 4px rgba(0,0,0,0.2);
+      --sep-line:       #2d3248;
+      --ac-border:      #2d3248;
+      --ac-hover:       #1e2235;
+      --ac-text:        #e2e4ef;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    min-height: 100vh;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 16px 40px;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    width: 100%;
+    max-width: 860px;
+    padding: 28px 0 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .logo-cegid {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0055A4;
+    letter-spacing: -0.5px;
+  }
+  .logo-arrow {
+    color: #c0c8e8;
+    font-size: 15px;
+    font-weight: 400;
+  }
+  .logo-aha {
+    font-size: 18px;
+    font-weight: 800;
+    color: #F04E23;
+    letter-spacing: -0.5px;
+  }
+
+  .page-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.2px;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    padding: 32px;
+    width: 100%;
+    max-width: 860px;
+    box-shadow: var(--shadow);
+  }
+
+  /* ── Preview box ── */
+  .preview {
+    background: var(--preview-bg);
+    border: 1px solid var(--preview-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+  }
+  .preview-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.4;
+    word-break: break-word;
+    margin-bottom: 6px;
+  }
+  .preview-meta {
+    font-size: 11px;
+    color: #7080c8;
+    margin-top: 4px;
+    display: flex;
+    gap: 10px;
+  }
+  .preview-pill {
+    background: var(--pill-bg);
+    color: #4361EE;
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  /* ── Form ── */
+  .field { margin-bottom: 16px; }
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+  }
+  label .opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-muted); }
+  input[type="password"], select {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--card-bg);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(67,97,238,0.10);
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* ── Separator ── */
+  .sep {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 22px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sep::before, .sep::after { content: ''; flex: 1; height: 1px; background: var(--sep-line); }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 10px 20px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .btn-primary { background: #4361EE; color: white; }
+  .btn-primary:hover { background: #3451d6; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(67,97,238,0.3); }
+  .btn-primary:active { transform: translateY(0); box-shadow: none; }
+  .btn-primary:disabled { background: #a5b4fc; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-ghost { background: none; color: var(--text-muted); border: none; font-size: 12px; font-family: inherit; cursor: pointer; padding: 4px 0; }
+  .btn-ghost:hover { color: var(--text-secondary); }
+  .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+
+  /* ── Alerts ── */
+  .alert { padding: 11px 14px; border-radius: 9px; font-size: 13px; margin-top: 12px; line-height: 1.5; }
+  .alert-error   { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+
+  /* ── Loading ── */
+  .loader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 8px 0;
+  }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #4361EE;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Success ── */
+  .success-wrap { text-align: center; padding: 8px 0; }
+  .success-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    font-size: 28px;
+    box-shadow: 0 4px 16px rgba(16,185,129,0.2);
+  }
+  .success-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .feature-ref {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--preview-bg);
+    border: 1.5px solid var(--preview-border);
+    border-left: 4px solid #4361EE;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 10px 0 20px;
+    word-break: break-word;
+    text-align: left;
+    transition: box-shadow 0.15s, transform 0.1s;
+  }
+  .feature-ref:hover {
+    box-shadow: 0 4px 16px rgba(67,97,238,0.15);
+    transform: translateY(-1px);
+  }
+  .btn-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #4361EE;
+    color: white;
+    text-decoration: none;
+    padding: 10px 22px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn-view:hover { background: #3451d6; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(67,97,238,0.3); }
+
+  /* ── No data ── */
+  .no-data { text-align: center; padding: 16px 0 8px; }
+  .no-data-icon { font-size: 40px; margin-bottom: 14px; }
+  .no-data h2 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .no-data p  { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+  .hidden { display: none !important; }
+
+  /* ── Autocomplete ── */
+  .ac-wrap    { position: relative; }
+  .ac-input   { width: 100%; padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 14px; font-family: inherit; color: var(--text); background: var(--card-bg); outline: none; transition: border-color 0.15s, box-shadow 0.15s; box-sizing: border-box; }
+  .ac-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(67,97,238,0.10); }
+  .ac-input.selected { background: var(--preview-bg); }
+  .ac-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--card-bg); border: 1.5px solid var(--border); border-radius: 9px; box-shadow: 0 8px 24px rgba(0,0,0,0.10); max-height: 220px; overflow-y: auto; z-index: 100; display: none; }
+  .ac-dropdown.open { display: block; }
+  .ac-item   { padding: 9px 13px; cursor: pointer; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--sep-line); line-height: 1.4; }
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover, .ac-item.active { background: var(--ac-hover); color: var(--border-focus); }
+  .ac-empty  { padding: 10px 13px; font-size: 13px; color: var(--text-muted); font-style: italic; }
+  .ac-clear  { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 16px; line-height: 1; padding: 2px; display: none; }
+  .ac-clear:hover { color: var(--text-secondary); }
+
+  .page-footer {
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- Page header with logos -->
+<header class="page-header">
+  <div class="logos">
+
+    <!-- Cegid logo -->
+    <span class="logo-cegid">cegid</span>
+
+    <span class="logo-arrow">×</span>
+
+    <!-- Aha! logo -->
+    <span class="logo-aha">Aha!</span>
+
+  </div>
+  <p class="page-title">Cegid Retail Feature Publisher</p>
+</header>
+
+<!-- Card -->
+<div class="card" id="app">
+
+  <!-- No data -->
+  <div id="view-nodata" class="no-data hidden">
+    <div class="no-data-icon">🔗</div>
+    <h2>No feature data</h2>
+    <p>Open this page from a link generated by the Cegid Retail skill in Claude.</p>
+    <p id="debug-hash" style="font-size:10px;color:#d1d5db;word-break:break-all;margin-top:12px;font-family:monospace"></p>
+  </div>
+
+  <!-- Loading -->
+  <div id="view-loading" class="hidden">
+    <div class="preview" id="preview-loading"></div>
+    <div class="loader"><div class="spinner"></div> Connecting to Aha!...</div>
+  </div>
+
+  <!-- Connect -->
+  <div id="view-connect" class="hidden">
+    <div class="preview" id="preview-connect"></div>
+    <div class="field">
+      <label>API key</label>
+      <input type="password" id="token-input" placeholder="Paste your Aha! API key..." autocomplete="off">
+      <p style="font-size:11px;color:#9ca3af;margin-top:5px">
+        <span id="token-help-text">Find yours in Aha! at</span>
+        <a href="https://cegid.aha.io/settings/api_keys" target="_blank" style="color:#4361EE;text-decoration:none">Settings → Developer → API Keys</a>
+      </p>
+    </div>
+    <div id="connect-error"></div>
+    <div class="btn-row">
+      <button class="btn-ghost" onclick="clearToken()">Clear saved token</button>
+      <button class="btn btn-primary" id="connect-btn" onclick="connect()">Connect →</button>
+    </div>
+  </div>
+
+  <!-- Select -->
+  <div id="view-select" class="hidden">
+    <div class="preview" id="preview-select"></div>
+    <div style="margin-bottom:14px"></div>
+    <div class="grid">
+      <div class="field">
+        <label>Release <span class="opt">(required)</span></label>
+        <select id="release-select"><option value="">— Select —</option></select>
+      </div>
+      <div class="field">
+        <label>Initiative <span class="opt">(optional)</span></label>
+        <div class="ac-wrap">
+          <input type="text" id="initiative-input" class="ac-input" placeholder="Search initiatives..." autocomplete="off">
+          <button class="ac-clear" id="initiative-clear" onclick="clearInitiative()">×</button>
+          <div class="ac-dropdown" id="initiative-dropdown"></div>
+        </div>
+        <input type="hidden" id="initiative-select">
+      </div>
+      <div class="field">
+        <label>Epic <span class="opt">(optional)</span></label>
+        <div class="ac-wrap">
+          <input type="text" id="epic-input" class="ac-input" placeholder="Search epics..." autocomplete="off">
+          <button class="ac-clear" id="epic-clear" onclick="clearEpic()">×</button>
+          <div class="ac-dropdown" id="epic-dropdown"></div>
+        </div>
+        <input type="hidden" id="epic-select">
+      </div>
+    </div>
+    <div id="push-error"></div>
+    <div class="btn-row">
+      <button class="btn-ghost" onclick="changeToken()">Change token</button>
+      <button class="btn btn-primary" id="push-btn" onclick="push()">Push to Aha! →</button>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div id="view-success" class="success-wrap hidden">
+    <div class="success-icon">✓</div>
+    <p class="success-title">Feature created</p>
+    <a id="success-link" href="#" target="_blank" class="feature-ref" id="success-ref" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer">
+      <span id="success-ref-text">—</span>
+      <span style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:#4361EE;font-size:13px;flex-shrink:0">
+        View in Aha!
+        <svg width="12" height="12" viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H5M11 2V8" stroke="#4361EE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </a>
+    <p id="success-name" style="display:none"></p>
+  </div>
+
+</div>
+
+<footer class="page-footer">
+  Cegid Retail · Internal tool &nbsp;·&nbsp;
+  Page <span id="footer-page-version">v1.0</span>
+  <span id="footer-skill-version"></span>
+</footer>
+
+<script>
+  const FR = navigator.language?.startsWith('fr');
+
+  const i18n = {
+    'Push to Aha! →':              FR ? 'Publier sur Aha! →' : 'Push to Aha! →',
+    'Change token':                FR ? 'Changer de token'   : 'Change token',
+    'Clear saved token':           FR ? 'Effacer le token'   : 'Clear saved token',
+    'Connect →':                   FR ? 'Se connecter →'     : 'Connect →',
+    'Feature created':             FR ? 'Feature créée'      : 'Feature created',
+    'Paste your Aha! API key...':  FR ? 'Colle ta clé API Aha!...' : 'Paste your Aha! API key...',
+    'Find yours in Aha! at':       FR ? 'Trouve la tienne dans Aha! :' : 'Find yours in Aha! at',
+  };
+
+  function t(key) { return i18n[key] || key; }
+
+  function applyTranslations() {
+    document.getElementById('connect-btn').textContent    = t('Connect →');
+    document.getElementById('token-input').placeholder    = t('Paste your Aha! API key...');
+    document.getElementById('token-help-text').textContent = t('Find yours in Aha! at');
+    document.querySelectorAll('.btn-ghost').forEach(b => {
+      if (b.textContent.trim() === 'Clear saved token') b.textContent = t('Clear saved token');
+      if (b.textContent.trim() === 'Change token')      b.textContent = t('Change token');
+    });
+  }
+
+
+  const LS_TOKEN      = 'cegid_aha_token';
+  const LS_RELEASE    = 'cegid_aha_last_release';
+  const LS_EPIC       = 'cegid_aha_last_epic';
+  const LS_INITIATIVE = 'cegid_aha_last_initiative';
+  const AHA_BASE   = 'https://cegid.aha.io/api/v1';
+  let feature      = null;
+
+  function loadFromHash() {
+    try {
+      const hash = window.location.hash;
+      if (!hash || !hash.includes('data=')) return null;
+      const raw      = hash.slice(hash.indexOf('data=') + 5).split('&')[0];
+      const decoded  = decodeURIComponent(raw);
+      const b64      = decoded.replace(/-/g, '+').replace(/_/g, '/');
+      const clean    = b64.replace(/[^A-Za-z0-9+/=]/g, '');    // strip invisible chars
+      const stripped = clean.replace(/=+$/, '');
+      const padded   = stripped + '='.repeat((4 - stripped.length % 4) % 4);
+      const bytes    = Uint8Array.from(atob(padded), c => c.charCodeAt(0));
+      return JSON.parse(new TextDecoder('utf-8').decode(bytes));
+    } catch(e) { console.error('Hash parse error:', e); return null; }
+  }
+
+  function renderPreview(id) {
+    if (!feature) return;
+    const nameLen = feature.name.length;
+    const tooLong = nameLen > 80;
+    const warning = tooLong
+      ? `<div style="margin-top:7px;font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:4px 9px">⚠ Name is ${nameLen} chars — Aha! truncates after ~80. Consider shortening.</div>`
+      : '';
+    const personas = (feature.personas || []).map(p =>
+      `<span style="background:rgba(112,128,200,0.15);color:#7080c8;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500">${escHtml(p)}</span>`
+    ).join('');
+    document.getElementById(id).innerHTML = `
+      <div class="preview-name">${escHtml(feature.name)}</div>
+      <div class="preview-meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">
+        <span class="preview-pill">${escHtml(feature.tags)}</span>
+        <span class="preview-pill">${escHtml(feature.product)}</span>
+        ${personas}
+      </div>
+      ${warning}
+      <div style="margin-top:12px">
+        <div style="max-height:340px;overflow-y:auto;border-radius:6px;font-size:13px;line-height:1.5">${buildFeatureHTML(feature)}</div>
+      </div>`;
+  }
+
+  async function ahaFetch(path, opts = {}) {
+    const tok = localStorage.getItem(LS_TOKEN);
+    const res = await fetch(`${AHA_BASE}${path}`, {
+      ...opts,
+      headers: { 'Authorization': `Bearer ${tok}`, 'Content-Type': 'application/json', 'Accept': 'application/json', ...(opts.headers || {}) },
+    });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
+    return res.json();
+  }
+
+  async function connect() {
+    const val = document.getElementById('token-input').value.trim();
+    if (!val) { showErr('connect-error', 'Please enter your API key.'); return; }
+    localStorage.setItem(LS_TOKEN, val);
+    const btn = document.getElementById('connect-btn');
+    btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block"></span>Connecting...</span>';
+    btn.disabled = true;
+    try { await loadData(); }
+    catch(e) {
+      localStorage.removeItem(LS_TOKEN);
+      showErr('connect-error', fmtErr(e));
+      btn.innerHTML = 'Connect →'; btn.disabled = false;
+    }
+  }
+
+  async function loadData() {
+    showView('loading'); renderPreview('preview-loading');
+    const p = encodeURIComponent(feature.product);
+    // Fetch all initiatives with pagination
+    async function fetchAllPersonas(product) {
+      try {
+        const res = await ahaFetch(`/products/${product}/personas?per_page=200`);
+        return res.personas || [];
+      } catch { return []; }
+    }
+
+    async function fetchAllInitiatives(product) {
+      const first = await ahaFetch(`/products/${product}/initiatives?per_page=200&page=1`);
+      let all = first.initiatives || [];
+      const total = first.pagination?.total_pages || 1;
+      if (total > 1) {
+        const pages = [];
+        for (let p = 2; p <= total; p++) pages.push(ahaFetch(`/products/${product}/initiatives?per_page=200&page=${p}`));
+        const rest = await Promise.all(pages);
+        rest.forEach(r => { all = all.concat(r.initiatives || []); });
+      }
+      return all;
+    }
+    async function fetchAllReleases(product) {
+      const first = await ahaFetch(`/products/${product}/releases?per_page=200&page=1`);
+      let all = first.releases || [];
+      const total = first.pagination?.total_pages || 1;
+      if (total > 1) {
+        const pages = [];
+        for (let p = 2; p <= total; p++) pages.push(ahaFetch(`/products/${product}/releases?per_page=200&page=${p}`));
+        const rest = await Promise.all(pages);
+        rest.forEach(r => { all = all.concat(r.releases || []); });
+      }
+      return all;
+    }
+
+    // Fetch all epics with pagination
+    async function fetchAllEpics(product) {
+      const first = await ahaFetch(`/products/${product}/epics?per_page=200&page=1`);
+      let all = first.epics || [];
+      const total = first.pagination?.total_pages || 1;
+      if (total > 1) {
+        const pages = [];
+        for (let p = 2; p <= total; p++) pages.push(ahaFetch(`/products/${product}/epics?per_page=200&page=${p}`));
+        const rest = await Promise.all(pages);
+        rest.forEach(r => { all = all.concat(r.epics || []); });
+      }
+      return all;
+    }
+
+    const [allReleases, allEpics, allInitiatives, allPersonas] = await Promise.all([
+      fetchAllReleases(p),
+      fetchAllEpics(p),
+      fetchAllInitiatives(p),
+      fetchAllPersonas(p),
+    ]);
+    window._ahaPersonas = allPersonas;
+
+    const releases = allReleases
+      .filter(x => x.name?.startsWith('PI'))
+      .sort((a, b) => {
+        const da = a.release_date ? new Date(a.release_date) : new Date(0);
+        const db = b.release_date ? new Date(b.release_date) : new Date(0);
+        return db - da;
+      });
+
+    const epics = allEpics.filter(x => {
+      const status = (x.workflow_status?.name || x.status || '').toLowerCase();
+      return status !== 'will not implement';
+    });
+    document.getElementById('release-select').innerHTML =
+      '<option value="">— Select —</option>' + releases.map(x=>`<option value="${escHtml(x.id)}">${escHtml(x.name)}</option>`).join('');
+    document.getElementById('epic-select').value = '';
+    initEpicAutocomplete(epics);
+    document.getElementById('initiative-select').value = '';
+    initInitiativeAutocomplete(allInitiatives.filter(x => {
+      const status = (x.workflow_status?.name || x.status || '').toLowerCase();
+      return status !== 'will not implement';
+    }));
+
+    // Restore last used values
+    const lastRelease = localStorage.getItem(LS_RELEASE);
+    const lastEpic    = localStorage.getItem(LS_EPIC);
+    if (lastRelease) document.getElementById('release-select').value = lastRelease;
+    if (lastEpic)    restoreEpic(lastEpic);
+    if (localStorage.getItem(LS_INITIATIVE)) restoreInitiative(localStorage.getItem(LS_INITIATIVE));
+
+    // Enable push button only when release is selected
+    const relSel  = document.getElementById('release-select');
+    const pushBtn = document.getElementById('push-btn');
+    const syncBtn = () => { pushBtn.disabled = !relSel.value; };
+    relSel.addEventListener('change', syncBtn);
+    syncBtn();
+    renderPreview('preview-select');
+    showView('select');
+  }
+
+  async function push() {
+    const releaseId = document.getElementById('release-select').value;
+    const epicId       = document.getElementById('epic-select').value;
+    const initiativeId = document.getElementById('initiative-select').value;
+    if (!releaseId) { showErr('push-error', 'Please select a release.'); return; }
+    const btn = document.getElementById('push-btn');
+    btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block"></span>Pushing...</span>';
+    btn.disabled = true;
+    const html    = buildFeatureHTML(feature);
+    const personas = (feature.personas || []).map(name => ({ name }));
+
+    const payload = { feature: {
+      name:          feature.name,
+      description:   html,
+      workflow_kind: { name: 'New' },
+      release_id:    releaseId,
+      tags:          feature.tags,
+      ...(personas.length  ? { personas:     personas     } : {}),
+      ...(epicId           ? { epic_id:       epicId       } : {}),
+      ...(initiativeId     ? { initiative_id: initiativeId } : {}),
+    }};
+    console.log('Full payload:', JSON.stringify(payload, null, 2));
+    try {
+      const data = await ahaFetch(`/products/${encodeURIComponent(feature.product)}/features`, { method: 'POST', body: JSON.stringify(payload) });
+      const featureRef = data.feature?.reference_num;
+      const featureId  = data.feature?.id;
+      console.log('Aha! response keys:', Object.keys(data.feature || {}));
+      console.log('Initiative in response:', data.feature?.initiative);
+      console.log('Personas in response:', data.feature?.personas);
+
+      localStorage.setItem(LS_RELEASE, releaseId);
+      if (epicId)       localStorage.setItem(LS_EPIC, epicId);       else localStorage.removeItem(LS_EPIC);
+      if (initiativeId) localStorage.setItem(LS_INITIATIVE, initiativeId); else localStorage.removeItem(LS_INITIATIVE);
+      document.getElementById('success-ref-text').innerHTML =
+        `<span style="opacity:0.7;margin-right:8px">${escHtml(featureRef || '—')}</span>${escHtml(data.feature?.name || feature.name)}`;
+      document.getElementById('success-link').href = data.feature?.url || '#';
+      document.getElementById('success-link').href        = data.feature?.url || '#';
+      showView('success');
+    } catch(e) {
+      showErr('push-error', fmtErr(e));
+      btn.innerHTML = 'Push to Aha! →'; btn.disabled = false;
+    }
+  }
+
+  let allInitiativesData = [];
+  let activeInitiativeIdx = -1;
+
+  function initInitiativeAutocomplete(initiatives) {
+    allInitiativesData = initiatives;
+    const inp  = document.getElementById('initiative-input');
+    const drop = document.getElementById('initiative-dropdown');
+    inp.addEventListener('input', () => {
+      const q = inp.value.trim().toLowerCase();
+      renderInitiativeDropdown(q ? allInitiativesData.filter(i => i.name.toLowerCase().includes(q)) : []);
+      drop.classList.toggle('open', q.length > 0);
+      if (!q) { document.getElementById('initiative-select').value = ''; inp.classList.remove('selected'); showInitiativeClear(false); }
+      activeInitiativeIdx = -1;
+    });
+    inp.addEventListener('keydown', e => {
+      const items = drop.querySelectorAll('.ac-item');
+      if (e.key === 'ArrowDown') { activeInitiativeIdx = Math.min(activeInitiativeIdx + 1, items.length - 1); highlightInitiativeItem(items); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { activeInitiativeIdx = Math.max(activeInitiativeIdx - 1, 0); highlightInitiativeItem(items); e.preventDefault(); }
+      else if (e.key === 'Enter' && activeInitiativeIdx >= 0) { items[activeInitiativeIdx]?.click(); e.preventDefault(); }
+      else if (e.key === 'Escape') { drop.classList.remove('open'); inp.blur(); }
+    });
+    inp.addEventListener('focus', () => {
+      if (inp.value.trim()) { renderInitiativeDropdown(allInitiativesData.filter(i => i.name.toLowerCase().includes(inp.value.trim().toLowerCase()))); drop.classList.add('open'); }
+    });
+    document.addEventListener('click', e => { if (!e.target.closest('#initiative-input') && !e.target.closest('#initiative-dropdown')) drop.classList.remove('open'); });
+  }
+
+  function renderInitiativeDropdown(initiatives) {
+    const drop = document.getElementById('initiative-dropdown');
+    drop.innerHTML = '';
+    if (!initiatives.length) {
+      const empty = document.createElement('div');
+      empty.className = 'ac-empty';
+      empty.textContent = 'No matching initiatives';
+      drop.appendChild(empty);
+      return;
+    }
+    initiatives.forEach(init => {
+      const div = document.createElement('div');
+      div.className = 'ac-item';
+      div.textContent = init.name;
+      div.addEventListener('click', () => selectInitiative(init.id, init.name));
+      drop.appendChild(div);
+    });
+  }
+
+  function highlightInitiativeItem(items) {
+    items.forEach((el, i) => el.classList.toggle('active', i === activeInitiativeIdx));
+    items[activeInitiativeIdx]?.scrollIntoView({ block: 'nearest' });
+  }
+
+  function selectInitiative(id, name) {
+    document.getElementById('initiative-select').value = id;
+    document.getElementById('initiative-input').value  = name;
+    document.getElementById('initiative-input').classList.add('selected');
+    document.getElementById('initiative-dropdown').classList.remove('open');
+    showInitiativeClear(true);
+    activeInitiativeIdx = -1;
+  }
+
+  function clearInitiative() {
+    document.getElementById('initiative-select').value = '';
+    document.getElementById('initiative-input').value  = '';
+    document.getElementById('initiative-input').classList.remove('selected');
+    showInitiativeClear(false);
+    localStorage.removeItem(LS_INITIATIVE);
+  }
+
+  function showInitiativeClear(show) { document.getElementById('initiative-clear').style.display = show ? 'block' : 'none'; }
+
+  function restoreInitiative(id) {
+    const init = allInitiativesData.find(i => i.id === id);
+    if (init) selectInitiative(init.id, init.name);
+  }
+
+
+  let activeIdx    = -1;
+
+  function initEpicAutocomplete(epics) {
+    allEpicsData = epics;
+    const inp  = document.getElementById('epic-input');
+    const drop = document.getElementById('epic-dropdown');
+
+    inp.addEventListener('input', () => {
+      const q = inp.value.trim().toLowerCase();
+      renderDropdown(q ? allEpicsData.filter(e => e.name.toLowerCase().includes(q)) : []);
+      drop.classList.toggle('open', q.length > 0);
+      if (!q) { document.getElementById('epic-select').value = ''; inp.classList.remove('selected'); showClear(false); }
+      activeIdx = -1;
+    });
+
+    inp.addEventListener('keydown', e => {
+      const items = drop.querySelectorAll('.ac-item');
+      if (e.key === 'ArrowDown') { activeIdx = Math.min(activeIdx + 1, items.length - 1); highlightItem(items); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { activeIdx = Math.max(activeIdx - 1, 0); highlightItem(items); e.preventDefault(); }
+      else if (e.key === 'Enter' && activeIdx >= 0) { items[activeIdx]?.click(); e.preventDefault(); }
+      else if (e.key === 'Escape') { drop.classList.remove('open'); inp.blur(); }
+    });
+
+    inp.addEventListener('focus', () => {
+      if (inp.value.trim()) { renderDropdown(allEpicsData.filter(e => e.name.toLowerCase().includes(inp.value.trim().toLowerCase()))); drop.classList.add('open'); }
+    });
+
+    document.addEventListener('click', e => { if (!e.target.closest('.ac-wrap')) drop.classList.remove('open'); });
+  }
+
+  function renderDropdown(filtered) {
+    const drop = document.getElementById('epic-dropdown');
+    drop.innerHTML = '';
+    if (!filtered.length) {
+      const empty = document.createElement('div');
+      empty.className = 'ac-empty';
+      empty.textContent = 'No matching epics';
+      drop.appendChild(empty);
+      return;
+    }
+    filtered.forEach(epic => {
+      const div = document.createElement('div');
+      div.className = 'ac-item';
+      div.textContent = epic.name;
+      div.addEventListener('click', () => selectEpic(epic.id, epic.name));
+      drop.appendChild(div);
+    });
+  }
+
+  function highlightItem(items) {
+    items.forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+    items[activeIdx]?.scrollIntoView({ block: 'nearest' });
+  }
+
+  function selectEpic(id, name) {
+    document.getElementById('epic-select').value = id;
+    document.getElementById('epic-input').value  = name;
+    document.getElementById('epic-input').classList.add('selected');
+    document.getElementById('epic-dropdown').classList.remove('open');
+    showClear(true);
+    activeIdx = -1;
+  }
+
+  function clearEpic() {
+    document.getElementById('epic-select').value = '';
+    document.getElementById('epic-input').value  = '';
+    document.getElementById('epic-input').classList.remove('selected');
+    showClear(false);
+    localStorage.removeItem(LS_EPIC);
+  }
+
+  function showClear(show) { document.getElementById('epic-clear').style.display = show ? 'block' : 'none'; }
+
+  function restoreEpic(id) {
+    const epic = allEpicsData.find(e => e.id === id);
+    if (epic) selectEpic(epic.id, epic.name);
+  }
+
+
+  function escHtml(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function buildFeatureHTML(f) {
+    // Support both old format (f.html) and new structured format
+    // Ancien format f.html supprimé : injectait du HTML brut venu de l'URL
+    const lbl  = 'width="20%" style="background-color:#7080c8;width:20%;vertical-align:middle;padding:7px 12px"';
+    const cnt  = 'width="80%" style="vertical-align:top;padding:7px 12px;width:80%"';
+    const cntA = 'width="80%" style="vertical-align:top;padding:7px 12px;width:80%;background-color:rgba(67,97,238,0.04)"';
+    const tbl  = 'width="100%" style="width:100%;border-collapse:separate;border-spacing:0;border-radius:8px;overflow:hidden;border:1px solid #d0d0d0;border-left:4px solid #4361EE;font-family:sans-serif;font-size:13px"';
+    const li   = (items) => (items || []).map(x => `<li>${escHtml(x)}</li>`).join('');
+    const br   = (s) => escHtml(s || '').replace(/\n/g, '<br>');
+    return `<table ${tbl}>`
+      + `<tr><td ${lbl}><b>Context</b></td><td ${cnt}>${br(f.context)}</td></tr>`
+      + `<tr><td ${lbl}><b>Objective</b></td><td ${cntA}>${br(f.objective)}</td></tr>`
+      + `<tr><td ${lbl}><b>Scope</b></td><td ${cnt}><strong>Included</strong><ul style="margin:4px 0 8px 0;padding-left:18px">${li(f.included)}</ul><strong>Excluded</strong><ul style="margin:4px 0 0 0;padding-left:18px">${li(f.excluded)}</ul></td></tr>`
+      + `<tr><td ${lbl}><b>Acceptance criteria</b></td><td ${cntA}><ul style="margin:0;padding-left:18px">${li(f.criteria)}</ul></td></tr>`
+      + `<tr><td ${lbl}><b>Dependencies &amp; notes</b></td><td ${cnt}>${br(f.dependencies)}</td></tr>`
+      + `<tr><td ${lbl}><b>Suggested vertical slices</b></td><td ${cntA}><ul style="margin:0;padding-left:18px">${li(f.slices)}</ul></td></tr>`
+      + `</table>`;
+  }
+
+
+  function showView(n) {
+    ['nodata','loading','connect','select','success'].forEach(v =>
+      document.getElementById(`view-${v}`).classList.toggle('hidden', v !== n));
+    if (n === 'connect')  applyTranslations();
+    if (n === 'select') {
+      document.getElementById('push-btn').textContent = t('Push to Aha! →');
+    }
+    if (n === 'success') {
+      document.querySelector('.success-title').textContent = t('Feature created');
+    }
+  }
+  function showErr(id, msg) { document.getElementById(id).innerHTML = `<div class="alert alert-error">${escHtml(msg)}</div>`; }
+  function fmtErr(e) { return e instanceof TypeError ? 'Network error — check your connection or API key.' : `Error: ${e.message}`; }
+  function clearToken()  { localStorage.removeItem(LS_TOKEN); document.getElementById('token-input').value = ''; document.getElementById('connect-error').innerHTML = ''; }
+  function changeToken() { clearToken(); renderPreview('preview-connect'); showView('connect'); }
+
+  (async function init() {
+    feature = loadFromHash();
+    if (!feature) {
+      showView('nodata');
+      const dbg = document.getElementById('debug-hash');
+      if (dbg) dbg.textContent = window.location.hash.slice(0, 120) || '(no hash)';
+      return;
+    }
+    if (feature.skill_version) {
+      document.getElementById('footer-skill-version').textContent = ` · Skill ${feature.skill_version}`;
+    }
+    const saved = localStorage.getItem(LS_TOKEN);
+    if (saved) { try { await loadData(); return; } catch { localStorage.removeItem(LS_TOKEN); } }
+    renderPreview('preview-connect');
+    showView('connect');
+  })();
+</script>
+</body>
+</html>
