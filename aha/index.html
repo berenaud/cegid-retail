@@ -415,7 +415,7 @@
   <div id="view-success" class="success-wrap hidden">
     <div class="success-icon">✓</div>
     <p class="success-title">Feature created</p>
-    <a id="success-link" href="#" target="_blank" class="feature-ref" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer">
+    <a id="success-link" href="#" target="_blank" class="feature-ref" id="success-ref" style="text-decoration:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer">
       <span id="success-ref-text">—</span>
       <span style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:var(--link);font-size:13px;flex-shrink:0">
         View in Aha!
@@ -467,11 +467,8 @@
     'Connecting...':               FR ? 'Connexion...' : 'Connecting...',
     'Network error, check your connection or API key.': FR ? 'Erreur réseau, vérifie ta connexion ou ta clé API.' : 'Network error, check your connection or API key.',
     'Error':                       FR ? 'Erreur' : 'Error',
+    'View mockups':                FR ? 'Voir les maquettes' : 'View mockups',
     'Persona not found in Aha!, add it by hand:': FR ? 'Persona introuvable dans Aha!, à ajouter à la main :' : 'Persona not found in Aha!, add it by hand:',
-    'Tag not found in Aha!, it will not be added:': FR ? 'Tag introuvable dans Aha!, il ne sera pas ajouté :' : 'Tag not found in Aha!, it will not be added:',
-    'Could not check tags in Aha!, they will not be added.': FR ? 'Impossible de vérifier les tags dans Aha!, ils ne seront pas ajoutés.' : 'Could not check tags in Aha!, they will not be added.',
-    'Name too long': FR ? 'Nom trop long' : 'Name too long',
-    'characters, 79 max. Generate the link again from the skill.': FR ? 'caractères, 79 maximum. Régénère le lien depuis le skill.' : 'characters, 79 max. Generate the link again from the skill.',
   };
 
   function t(key) { return i18n[key] || key; }
@@ -538,28 +535,17 @@
   function renderPreview(id) {
     if (!feature) return;
     const nameLen = feature.name.length;
-    const warnBox = (msg) => `<div style="margin-top:7px;font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:4px 9px">⚠ ${escHtml(msg)}</div>`;
-    let warning = nameLen >= 80
-      ? warnBox(`${t('Name too long')} (${nameLen} ${t('characters, 79 max. Generate the link again from the skill.')})`)
+    const tooLong = nameLen > 80;
+    const warning = tooLong
+      ? `<div style="margin-top:7px;font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:4px 9px">⚠ Name is ${nameLen} chars — Aha! truncates after ~80. Consider shortening.</div>`
       : '';
-    // Tags : window._tagStatus vaut undefined (pas encore vérifiés),
-    // null (vérification en échec) ou { tag: nom exact dans Aha! | false }.
-    const status  = window._tagStatus;
-    const tags    = featureTags();
-    const notFound = status ? tags.filter(tg => !status[tg]) : [];
-    if (status === null && tags.length) warning += warnBox(t('Could not check tags in Aha!, they will not be added.'));
-    if (notFound.length) warning += warnBox(`${t('Tag not found in Aha!, it will not be added:')} ${notFound.join(', ')}`);
-    const pill = (txt, bad) => `<span style="${bad
-        ? 'background:#fffbeb;color:#b45309;border:1px solid #fcd34d;text-decoration:line-through'
-        : 'background:var(--pill-bg);color:var(--pill-color)'};border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500">${escHtml(txt)}</span>`;
-    const tagPills = tags.map(tg => pill(tg, status === null || notFound.includes(tg))).join('');
     const personas = (feature.personas || []).map(p =>
       `<span style="background:rgba(112,128,200,0.15);color:var(--pill-color);border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500">${escHtml(p)}</span>`
     ).join('');
     document.getElementById(id).innerHTML = `
       <div class="preview-name">${escHtml(feature.name)}</div>
       <div class="preview-meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px">
-        ${tagPills}
+        <span class="preview-pill">${escHtml(feature.tags)}</span>
         <span class="preview-pill">${escHtml(feature.product)}</span>
         ${personas}
       </div>
@@ -597,49 +583,60 @@
   async function loadData() {
     showView('loading'); renderPreview('preview-loading');
     const p = encodeURIComponent(feature.product);
-    // Récupère toutes les pages d'une liste Aha! (releases, epics, initiatives)
-    async function fetchAll(product, kind) {
-      const url = n => `/products/${product}/${kind}?per_page=200&page=${n}`;
-      const first = await ahaFetch(url(1));
-      let all = first[kind] || [];
+    // Fetch all initiatives with pagination
+    async function fetchAllPersonas(product) {
+      try {
+        const res = await ahaFetch(`/products/${product}/personas?per_page=200`);
+        return res.personas || [];
+      } catch { return []; }
+    }
+
+    async function fetchAllInitiatives(product) {
+      const first = await ahaFetch(`/products/${product}/initiatives?per_page=200&page=1`);
+      let all = first.initiatives || [];
       const total = first.pagination?.total_pages || 1;
       if (total > 1) {
-        const rest = await Promise.all(Array.from({ length: total - 1 }, (_, i) => ahaFetch(url(i + 2))));
-        rest.forEach(r => { all = all.concat(r[kind] || []); });
+        const pages = [];
+        for (let p = 2; p <= total; p++) pages.push(ahaFetch(`/products/${product}/initiatives?per_page=200&page=${p}`));
+        const rest = await Promise.all(pages);
+        rest.forEach(r => { all = all.concat(r.initiatives || []); });
       }
       return all;
     }
-    // Personas : chargés en arrière-plan, sans faire attendre l'écran.
-    // Seule la publication en a besoin (pour retrouver leurs identifiants).
-    window._personasPromise = fetchAll(p, 'personas').catch(() => null);
-
-    // Tags : l'API Aha! ne sait pas lister les tags. On cherche donc une feature
-    // (tous produits confondus) qui porte le tag. Trouvée : le tag existe, et on
-    // récupère son orthographe exacte. Aucune : le tag n'existe pas (ou n'a jamais
-    // servi sur une feature) et il ne sera pas envoyé.
-    async function checkTag(tag) {
-      const res  = await ahaFetch(`/features?tag=${encodeURIComponent(tag)}&per_page=5&fields=tags`);
-      const list = res.features || [];
-      if (!list.length) return false;
-      const all  = list.flatMap(f => Array.isArray(f.tags) ? f.tags : []).map(x => typeof x === 'string' ? x : x?.name);
-      if (!all.length) return tag; // champ tags absent de la réponse : on se fie au filtre
-      return all.find(x => normName(x) === normName(tag)) || false;
-    }
-    async function checkTags() {
-      try {
-        const tags = featureTags();
-        const res  = await Promise.all(tags.map(checkTag));
-        return Object.fromEntries(tags.map((tg, i) => [tg, res[i]]));
-      } catch { return null; }
+    async function fetchAllReleases(product) {
+      const first = await ahaFetch(`/products/${product}/releases?per_page=200&page=1`);
+      let all = first.releases || [];
+      const total = first.pagination?.total_pages || 1;
+      if (total > 1) {
+        const pages = [];
+        for (let p = 2; p <= total; p++) pages.push(ahaFetch(`/products/${product}/releases?per_page=200&page=${p}`));
+        const rest = await Promise.all(pages);
+        rest.forEach(r => { all = all.concat(r.releases || []); });
+      }
+      return all;
     }
 
-    const [allReleases, allEpics, allInitiatives, tagStatus] = await Promise.all([
-      fetchAll(p, 'releases'),
-      fetchAll(p, 'epics'),
-      fetchAll(p, 'initiatives'),
-      checkTags(),
+    // Fetch all epics with pagination
+    async function fetchAllEpics(product) {
+      const first = await ahaFetch(`/products/${product}/epics?per_page=200&page=1`);
+      let all = first.epics || [];
+      const total = first.pagination?.total_pages || 1;
+      if (total > 1) {
+        const pages = [];
+        for (let p = 2; p <= total; p++) pages.push(ahaFetch(`/products/${product}/epics?per_page=200&page=${p}`));
+        const rest = await Promise.all(pages);
+        rest.forEach(r => { all = all.concat(r.epics || []); });
+      }
+      return all;
+    }
+
+    const [allReleases, allEpics, allInitiatives, allPersonas] = await Promise.all([
+      fetchAllReleases(p),
+      fetchAllEpics(p),
+      fetchAllInitiatives(p),
+      fetchAllPersonas(p),
     ]);
-    window._tagStatus = tagStatus;
+    window._ahaPersonas = allPersonas;
 
     const releases = allReleases
       .filter(x => x.name?.startsWith('PI'))
@@ -674,7 +671,7 @@
     const relSel  = document.getElementById('release-select');
     const pushBtn = document.getElementById('push-btn');
     const syncBtn = () => { pushBtn.disabled = !relSel.value; };
-    relSel.onchange = syncBtn;
+    relSel.addEventListener('change', syncBtn);
     syncBtn();
     renderPreview('preview-select');
     showView('select');
@@ -693,21 +690,18 @@
     // la feature est créée dans la release, epic et initiative acceptent un nom ou un id.
     // Personas : champ personnalisé "personas" de la feature, qui attend
     // une liste d'identifiants. On retrouve chaque id à partir du nom envoyé par le skill.
-    const known   = (await window._personasPromise) || [];
-    const norm    = normName;
+    const known   = window._ahaPersonas || [];
+    const norm    = x => String(x || '').trim().toLowerCase();
     const wanted  = feature.personas || [];
     const matched = wanted.map(n => known.find(k => norm(k.name) === norm(n))).filter(Boolean);
     const missing = wanted.filter(n => !known.some(k => norm(k.name) === norm(n)));
     const personaIds = [...new Set(matched.map(k => String(k.id)))];
-    // Tags : uniquement ceux trouvés dans Aha!, avec leur orthographe exacte
-    const status    = window._tagStatus || {};
-    const validTags = featureTags().map(tg => status[tg]).filter(Boolean);
 
     const payload = { feature: {
       name:          feature.name,
       description:   html,
       workflow_kind: { name: 'New' },
-      ...(validTags.length ? { tags: validTags.join(', ') } : {}),
+      tags:          feature.tags,
       ...(epicId       ? { epic:       epicId       } : {}),
       ...(initiativeId ? { initiative: initiativeId } : {}),
       ...(personaIds.length ? { custom_fields: { personas: personaIds } } : {}),
@@ -723,6 +717,7 @@
       document.getElementById('success-ref-text').innerHTML =
         `<span style="opacity:0.7;margin-right:8px">${escHtml(featureRef || '—')}</span>${escHtml(data.feature?.name || feature.name)}`;
       document.getElementById('success-link').href = data.feature?.url || '#';
+      document.getElementById('success-link').href        = data.feature?.url || '#';
       const warn = document.getElementById('success-warning');
       warn.textContent = missing.length
         ? `${t('Persona not found in Aha!, add it by hand:')} ${missing.join(', ')}`
@@ -738,11 +733,8 @@
   let allInitiativesData = [];
   let activeInitiativeIdx = -1;
 
-  let initiativeBound = false;
   function initInitiativeAutocomplete(initiatives) {
     allInitiativesData = initiatives;
-    if (initiativeBound) return;
-    initiativeBound = true;
     const inp  = document.getElementById('initiative-input');
     const drop = document.getElementById('initiative-dropdown');
     inp.addEventListener('input', () => {
@@ -815,13 +807,9 @@
 
 
   let activeIdx    = -1;
-  let allEpicsData = [];
-  let epicBound    = false;
 
   function initEpicAutocomplete(epics) {
     allEpicsData = epics;
-    if (epicBound) return;
-    epicBound = true;
     const inp  = document.getElementById('epic-input');
     const drop = document.getElementById('epic-dropdown');
 
@@ -845,7 +833,7 @@
       if (inp.value.trim()) { renderDropdown(allEpicsData.filter(e => e.name.toLowerCase().includes(inp.value.trim().toLowerCase()))); drop.classList.add('open'); }
     });
 
-    document.addEventListener('click', e => { if (!e.target.closest('#epic-input') && !e.target.closest('#epic-dropdown')) drop.classList.remove('open'); });
+    document.addEventListener('click', e => { if (!e.target.closest('.ac-wrap')) drop.classList.remove('open'); });
   }
 
   function renderDropdown(filtered) {
@@ -897,14 +885,6 @@
   }
 
 
-  function featureTags() {
-    const raw = feature?.tags;
-    const list = Array.isArray(raw) ? raw : String(raw ?? '').split(',');
-    return [...new Set(list.map(x => String(x).trim()).filter(Boolean))];
-  }
-
-  function normName(x) { return String(x ?? '').trim().toLowerCase(); }
-
   function escHtml(s) {
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
@@ -914,20 +894,34 @@
     // Ancien format f.html supprimé : injectait du HTML brut venu de l'URL
     // Séparateur entre les lignes du tableau (absent sur la dernière ligne,
     // dont le bas est déjà tracé par la bordure du tableau)
-    const sep  = (last) => last ? '' : 'border-bottom:1px solid #d0d0d0;';
-    const lbl  = (last) => `width="20%" style="background-color:#7080c8;color:#1a1a2e;width:20%;vertical-align:middle;padding:7px 12px;${sep(last)}"`;
-    const cnt  = (last) => `width="80%" style="vertical-align:top;padding:7px 12px;width:80%;${sep(last)}"`;
-    const cntA = (last) => `width="80%" style="vertical-align:top;padding:7px 12px;width:80%;background-color:rgba(67,97,238,0.04);${sep(last)}"`;
+    // Trait blanc sur la colonne violette, gris moyen sur le contenu : visibles sur fond clair comme sombre
+    const sep  = (last, color) => last ? '' : `border-bottom:1px solid ${color};`;
+    const lbl  = (last) => `width="20%" style="background-color:#7080c8;color:#1a1a2e;width:20%;vertical-align:middle;padding:7px 12px;${sep(last, '#ffffff')}"`;
+    const cnt  = (last) => `width="80%" style="vertical-align:top;padding:7px 12px;width:80%;${sep(last, '#9ca3af')}"`;
+    const cntA = (last) => `width="80%" style="vertical-align:top;padding:7px 12px;width:80%;background-color:rgba(67,97,238,0.04);${sep(last, '#9ca3af')}"`;
     const tbl  = 'width="100%" style="width:100%;border-collapse:separate;border-spacing:0;border-radius:8px;overflow:hidden;border:1px solid #d0d0d0;border-left:4px solid #4361EE;font-family:sans-serif;font-size:13px"';
     const li   = (items) => (items || []).map(x => `<li>${escHtml(x)}</li>`).join('');
     const br   = (s) => escHtml(s || '').replace(/\n/g, '<br>');
+    // Maquettes : lien https uniquement (jamais javascript: ou autre schéma), sinon texte simple
+    const mockups = (m) => /^https:\/\/[^\s"'<>]+$/.test(m || '')
+      ? `<a href="${escHtml(m)}" target="_blank" rel="noopener">${escHtml(t('View mockups'))}</a>`
+      : br(m);
+    const rows = [
+      ['Context', br(f.context)],
+      ['Objective', br(f.objective)],
+      ['Scope', `<strong>Included</strong><ul style="margin:4px 0 8px 0;padding-left:18px">${li(f.included)}</ul><strong>Excluded</strong><ul style="margin:4px 0 0 0;padding-left:18px">${li(f.excluded)}</ul>`],
+      // Absent des liens générés par les versions du skill antérieures aux maquettes
+      ...(f.mockups ? [['Mockups', mockups(f.mockups)]] : []),
+      ['Acceptance criteria', `<ul style="margin:0;padding-left:18px">${li(f.criteria)}</ul>`],
+      ['Dependencies &amp; notes', br(f.dependencies)],
+      ['Suggested vertical slices', `<ul style="margin:0;padding-left:18px">${li(f.slices)}</ul>`],
+    ];
     return `<table ${tbl}>`
-      + `<tr><td ${lbl()}><b>Context</b></td><td ${cnt()}>${br(f.context)}</td></tr>`
-      + `<tr><td ${lbl()}><b>Objective</b></td><td ${cntA()}>${br(f.objective)}</td></tr>`
-      + `<tr><td ${lbl()}><b>Scope</b></td><td ${cnt()}><strong>Included</strong><ul style="margin:4px 0 8px 0;padding-left:18px">${li(f.included)}</ul><strong>Excluded</strong><ul style="margin:4px 0 0 0;padding-left:18px">${li(f.excluded)}</ul></td></tr>`
-      + `<tr><td ${lbl()}><b>Acceptance criteria</b></td><td ${cntA()}><ul style="margin:0;padding-left:18px">${li(f.criteria)}</ul></td></tr>`
-      + `<tr><td ${lbl()}><b>Dependencies &amp; notes</b></td><td ${cnt()}>${br(f.dependencies)}</td></tr>`
-      + `<tr><td ${lbl(true)}><b>Suggested vertical slices</b></td><td ${cntA(true)}><ul style="margin:0;padding-left:18px">${li(f.slices)}</ul></td></tr>`
+      + rows.map(([label, content], i) => {
+          const last = i === rows.length - 1;
+          const cell = i % 2 ? cntA(last) : cnt(last);
+          return `<tr><td ${lbl(last)}><b>${label}</b></td><td ${cell}>${content}</td></tr>`;
+        }).join('')
       + `</table>`;
   }
 
