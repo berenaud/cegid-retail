@@ -1,5 +1,5 @@
 ---
-name: cegid-retail-feature-generator
+name: cegid-retail-feature-generator 
 metadata:
   updated: "2026-09-30"
 description: Generates a complete structured Aha! feature from a raw description, then produces a link to the Aha! Publisher page to push it into Aha!. Use this skill whenever a PM mentions a feature to create, a user need to formalize, a product idea to structure, or explicitly asks to "create a feature", "write an Aha! feature", "formalize a product request". Guides the user with a welcome message, fills the standard 7-section template, iterates in conversation, checks the Definition of Ready, and generates the publisher link. Also triggers on "feature", "Aha", "user story", "product ticket" in a PM context.
