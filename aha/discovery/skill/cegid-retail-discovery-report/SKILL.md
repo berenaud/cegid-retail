@@ -1,8 +1,8 @@
 ---
 name: cegid-retail-discovery-report
 metadata:
-  updated: "2026-09-29" 
-description: Turns raw discovery material (customer interview notes, store visit notes, workshop transcripts, support tickets) into a structured, evidence-based discovery report, then produces a link to the Discovery Publisher page to save it as a note in Aha! (Knowledge > Documents > Discoveries). Use this skill whenever a Cegid Retail PM wants to synthesize interviews or research, write a discovery report, "faire une synthèse de discovery", "analyser des entretiens", or prepare the evidence before writing a feature. Do not use it to write a feature directly: that is the cegid-retail-feature-generator skill.
+  updated: "2026-10-01"
+description: "Turns raw discovery material (customer interview notes, store visit notes, workshop transcripts, support tickets) into a structured, evidence-based discovery report, then produces a link to the Discovery Publisher page to save it as a note in Aha! (Knowledge > Documents > Discoveries). Use this skill whenever a Cegid Retail PM wants to synthesize interviews or research, write a discovery report, \"faire une synthèse de discovery\", \"analyser des entretiens\", or prepare the evidence before writing a feature. Do not use it to write a feature directly: that is the cegid-retail-feature-generator skill."
 ---
 
 # Cegid Retail Discovery Report
