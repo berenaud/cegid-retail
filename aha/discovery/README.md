@@ -41,7 +41,7 @@ sequenceDiagram
 
 En détail :
 
-1. Le rapport est compressé dans le lien, après `#z=`. Cette partie n'est jamais envoyée au serveur : les verbatims ne transitent pas par GitHub.
+1. Le rapport est compressé dans le lien, après `#z=`, avec une somme de contrôle (`&c=`) qui permet à la page de détecter un lien abîmé. Cette partie n'est jamais envoyée au serveur : les verbatims ne transitent pas par GitHub. Claude fournit aussi le rapport en fichier `.json`, à déposer sur la page si le lien ne passe pas.
 2. Le skill vérifie que chaque verbatim existe mot pour mot dans les sources fournies, et bloque s'il trouve un email ou un numéro de téléphone.
 3. La page crée un dossier `AAAA-MM Sujet` dans **Knowledge > Documents > Discoveries**, puis la note du rapport à l'intérieur. Si un dossier du même nom existe déjà, le rapport y est ajouté.
 4. Si le même lien a déjà été publié depuis ce navigateur, la page le signale pour éviter un doublon.
@@ -74,7 +74,8 @@ C'est la même clé API que pour la page Aha! Feature Publisher. Si elle y est d
 
 - **« Dossier Discoveries introuvable »** : le dossier n'existe pas, est mal nommé, ou n'est pas dans le produit `RETAILY2`.
 - **Erreur 401** : clé API invalide ou expirée.
-- **Écran « Aucun rapport à publier »** : le lien est tronqué. Le régénérer depuis le skill.
+- **Écran « Lien abîmé »** : le lien a été altéré en route (il est long, un seul caractère suffit). Déposer sur la page le fichier `.json` fourni par Claude avec le lien : il contient exactement le même rapport.
+- **Écran « Aucun rapport à publier »** : la page a été ouverte sans lien. Même solution : déposer le fichier `.json`.
 
 ### Format des données
 
@@ -134,7 +135,7 @@ sequenceDiagram
 
 In detail:
 
-1. The report is compressed in the link, after `#z=`. This part is never sent to the server: quotes never go through GitHub.
+1. The report is compressed in the link, after `#z=`, with a checksum (`&c=`) that lets the page detect a damaged link. This part is never sent to the server: quotes never go through GitHub. Claude also provides the report as a `.json` file, to drop on the page if the link fails.
 2. The skill checks that each quote exists word for word in the sources provided, and blocks if it finds an email or a phone number.
 3. The page creates a `YYYY-MM Topic` folder in **Knowledge > Documents > Discoveries**, then the report note inside it. If a folder with the same name already exists, the report is added to it.
 4. If the same link was already published from this browser, the page says so to avoid a duplicate.
@@ -167,4 +168,5 @@ It is the same API key as for the Aha! Feature Publisher page. If it is already 
 
 - **"Discoveries folder not found"**: the folder does not exist, is misnamed, or is not in product `RETAILY2`.
 - **401 error**: invalid or expired API key.
-- **"No report to publish" screen**: the link is truncated. Generate it again from the skill.
+- **"Damaged link" screen**: the link was altered on the way (it is long, a single character is enough). Drop on the page the `.json` file provided by Claude with the link: it holds exactly the same report.
+- **"No report to publish" screen**: the page was opened without a link. Same fix: drop the `.json` file.

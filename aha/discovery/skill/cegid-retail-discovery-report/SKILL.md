@@ -161,16 +161,35 @@ if data["recommendation"]["decision"] not in ("Lancer une feature", "Creuser", "
 if errors:
     sys.exit("\n".join(errors))
 
+# 1. Fichier JSON : la voie fiable, toujours fourni au PM
+import os
+slug = re.sub(r"[^a-z0-9]+", "-", data["topic"].lower()).strip("-") or "report"
+os.makedirs("/mnt/user-data/outputs", exist_ok=True)
+path = f"/mnt/user-data/outputs/discovery-{slug}.json"
+with open(path, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, ensure_ascii=False, indent=2)
+
+# 2. Lien : compressé, avec une somme de contrôle (c=) pour que la page détecte un lien abîmé
 raw = json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 c = zlib.compressobj(9, zlib.DEFLATED, -15)
 z = base64.urlsafe_b64encode(c.compress(raw) + c.flush()).rstrip(b"=").decode()
-print(f"{PUBLISHER_URL}#z={z}")
-print(f"(link length: {len(PUBLISHER_URL) + 3 + len(z)} characters)", file=sys.stderr)
+crc = format(zlib.crc32(z.encode()), "08x")
+print(f"FILE: {path}")
+print(f"LINK: {PUBLISHER_URL}#z={z}&c={crc}")
 ```
 
 If the script reports a quote not found, fix the quote so it matches the source word for word, or remove it. Never modify the sources file to make a quote pass.
 
-Then say: "Et voilà : [Publier dans Aha!](GENERATED_URL)" and add one line: the page lets the PM check the folder name (format `AAAA-MM Sujet`, created in Discoveries) before publishing.
+Then deliver both, in this order:
+
+1. **The file**: share the JSON file printed after `FILE:` with the PM (present it as a downloadable file).
+2. **The link**: "Et voilà : [Publier dans Aha!](LINK)", where LINK is the URL printed after `LINK:`.
+
+The link is long and must be reproduced character for character, including the final `&c=…`: never retype, shorten, reformat or "fix" it. If a single character changes, the page detects it (thanks to `c=`) and shows "Lien abîmé".
+
+Then add, in two short lines:
+- the page lets the PM check the folder name (format `AAAA-MM Sujet`, created in Discoveries) before publishing;
+- if the page says the link is damaged, the PM just drops the JSON file on the page: it contains exactly the same report.
 
 ## 7. After publishing
 

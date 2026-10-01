@@ -31,7 +31,29 @@ async function ahaFetch(path, opts = {}) {
 // ---------- Lecture du lien ----------
 // #z=...    : JSON compressé (deflate brut) puis base64url
 // #data=... : JSON en base64url, non compressé
-// Renvoie { data, key } (key = empreinte courte du lien, pour détecter une double publication) ou null.
+// &c=...    : optionnel, CRC32 (hexadécimal) des données, pour détecter un lien abîmé
+// Renvoie { data, key } (key = empreinte courte, pour détecter une double publication),
+// { error: 'corrupt' } si le lien contient des données illisibles, ou null s'il n'en contient pas.
+function crc32(str) {
+  let c, crc = 0xFFFFFFFF;
+  for (let i = 0; i < str.length; i++) {
+    c = (crc ^ str.charCodeAt(i)) & 0xFF;
+    for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xEDB88320 : c >>> 1;
+    crc = (crc >>> 8) ^ c;
+  }
+  return ((crc ^ 0xFFFFFFFF) >>> 0).toString(16).padStart(8, '0');
+}
+
+async function shortKey(text) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].slice(0, 12).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Données lues depuis un fichier JSON (repli quand le lien est abîmé)
+async function payloadFromText(text) {
+  try { return { data: JSON.parse(text), key: await shortKey(text) }; }
+  catch { return { error: 'corrupt' }; }
+}
 function b64urlToBytes(s) {
   const b64 = decodeURIComponent(s).replace(/-/g,'+').replace(/_/g,'/').replace(/[^A-Za-z0-9+/]/g,'');
   const padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
@@ -42,6 +64,8 @@ async function decodeHashPayload() {
   try {
     const m = location.hash.match(/[#&](z|data)=([^&]+)/);
     if (!m) return null;
+    const check = location.hash.match(/[#&]c=([0-9a-f]{8})/)?.[1];
+    if (check && crc32(m[2]) !== check) return { error: 'corrupt' };
     const bytes = b64urlToBytes(m[2]);
     let text;
     if (m[1] === 'z') {
@@ -50,10 +74,8 @@ async function decodeHashPayload() {
     } else {
       text = new TextDecoder('utf-8').decode(bytes);
     }
-    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(m[2]));
-    const key = [...new Uint8Array(digest)].slice(0, 12).map(b => b.toString(16).padStart(2, '0')).join('');
-    return { data: JSON.parse(text), key };
-  } catch (e) { console.error('Hash parse error:', e); return null; }
+    return { data: JSON.parse(text), key: await shortKey(m[2]) };
+  } catch (e) { console.error('Hash parse error:', e); return { error: 'corrupt' }; }
 }
 
 // ---------- Versions (footer) ----------
