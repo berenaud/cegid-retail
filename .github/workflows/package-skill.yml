@@ -1,16 +1,16 @@
-# Publie le skill sous forme de zip prêt à installer dans Claude.
-# Se déclenche à chaque modification du dossier du skill sur main,
-# ou à la main depuis l'onglet Actions.
-# Lien de téléchargement stable :
-# https://github.com/berenaud/cegid-retail/releases/download/skill-latest/cegid-retail-feature-generator.zip
+# Publie chaque skill du dépôt sous forme de zip prêt à installer dans Claude.
+# Un skill = un dossier <famille>/<outil>/skill/<nom-du-skill>/ contenant SKILL.md.
+# Tous les zips sont attachés à la release "skill-latest", avec un lien stable :
+#   https://github.com/berenaud/cegid-retail/releases/download/skill-latest/<nom-du-skill>.zip
+# Se déclenche à chaque modification d'un skill sur main, ou à la main depuis l'onglet Actions.
 
-name: Package skill
+name: Package skills
 
 on:
   push:
     branches: [main]
     paths:
-      - 'aha/skill/**'
+      - '**/skill/**'
   workflow_dispatch:
 
 permissions:
@@ -22,19 +22,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Construire le zip
+      - name: Construire les zips
         run: |
-          cd aha/skill
-          zip -r "$GITHUB_WORKSPACE/cegid-retail-feature-generator.zip" cegid-retail-feature-generator
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          : > "$GITHUB_WORKSPACE/notes.md"
+          find . -path ./.git -prune -o -type f -name SKILL.md -path '*/skill/*' -print | sort | while read -r f; do
+            dir=$(dirname "$f"); name=$(basename "$dir"); parent=$(dirname "$dir")
+            version=$(grep -m1 -oE 'updated: *"?[0-9]{4}-[0-9]{2}-[0-9]{2}' "$f" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+            (cd "$parent" && zip -rq "$GITHUB_WORKSPACE/dist/$name.zip" "$name")
+            echo "- **$name** : version $version" >> "$GITHUB_WORKSPACE/notes.md"
+            echo "Built $name.zip ($version)"
+          done
+          echo "" >> "$GITHUB_WORKSPACE/notes.md"
+          echo "Télécharger le zip du skill voulu ci-dessous et l'installer dans Claude, sans le décompresser." >> "$GITHUB_WORKSPACE/notes.md"
 
       - name: Publier la release skill-latest
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION=$(grep -m1 -oE 'updated: *"?[0-9]{4}-[0-9]{2}-[0-9]{2}' aha/skill/cegid-retail-feature-generator/SKILL.md | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
           gh release delete skill-latest --yes --cleanup-tag || true
-          gh release create skill-latest cegid-retail-feature-generator.zip \
+          gh release create skill-latest dist/*.zip \
             --target "$GITHUB_SHA" \
-            --title "Skill $VERSION" \
-            --notes "Version du skill : $VERSION. Télécharger le zip ci-dessous et l'installer dans Claude." \
+            --title "Skills $(date -u +%Y-%m-%d)" \
+            --notes-file notes.md \
             --latest
