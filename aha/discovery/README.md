@@ -11,7 +11,7 @@ Page : https://berenaud.github.io/cegid-retail/aha/discovery/
 ### Ce que contient ce dossier
 
 - `index.html` : la page qui publie un rapport de discovery dans Aha!, en note.
-- `skill/cegid-retail-discovery-report/` : le skill Claude qui analyse le matériel de discovery et rédige le rapport.
+- `skill/cegid-retail-discovery-report/` : le skill Claude qui analyse le matériel de discovery et rédige le rapport. Il contient `SKILL.md` (les consignes) et `scripts/build.py` (la vérification et la construction du lien), installés ensemble avec le zip.
 
 ### Fonctionnement
 
@@ -107,7 +107,7 @@ JSON compressé (deflate brut) puis encodé en base64url, après `#z=` :
 ### What this folder contains
 
 - `index.html`: the page that publishes a discovery report to Aha! as a note.
-- `skill/cegid-retail-discovery-report/`: the Claude skill that analyses discovery material and writes the report.
+- `skill/cegid-retail-discovery-report/`: the Claude skill that analyses discovery material and writes the report. It holds `SKILL.md` (the instructions) and `scripts/build.py` (checks and link building), installed together with the zip.
 
 ### How it works
 

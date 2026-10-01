@@ -84,6 +84,15 @@ Show the report to the PM in a readable form (headings, a summary table of probl
 
 After each version, ask: "Voilà ! Qu'est-ce que tu veux ajuster ?" Keep iterating until explicit validation ("ok", "c'est bon", "validé", "go").
 
+**How to show a corrected version (saves tokens, keeps the overview)**
+- The first version is always shown in full.
+- After a correction, show:
+  - the topic, status and recommendation lines in full, always;
+  - every modified section in full, with "*(modifié)*" after its title;
+  - every unchanged section as a single line: its title, "inchangé", and a short summary of a few words (e.g. "**Problème 2, Saisie manuelle des remises** : inchangé (fréquence 5/8, preuve forte, 2 verbatims)").
+- If the PM asks to see everything ("montre tout", "version complète"), show the full version.
+- No need to show the full version again before generating the link: the publisher page shows a complete preview before publishing.
+
 Before generating the link, silently check:
 
 | Criterion | Rule |
@@ -101,22 +110,16 @@ If a criterion fails, say what to fix. If all pass, go to section 6 without ment
 
 ## 6. Discovery Publisher link
 
-Run this Python snippet via bash, placeholders filled in. It checks the quotes against `/tmp/discovery_sources.txt`, looks for personal data, then compresses the report into the link.
+Do not write a script: write the report as JSON, then run the script `scripts/build.py` shipped in this skill's folder (next to this SKILL.md). It checks the quotes against `/tmp/discovery_sources.txt`, looks for personal data, writes the JSON file and prints the link.
 
-```python
-import json, base64, re, sys, zlib, unicodedata
-
-PUBLISHER_URL = "https://berenaud.github.io/cegid-retail/aha/discovery/"
-
-data = {
-  "topic":         "{Topic in English}",
-  "lang":          "fr",
-  "status":        "{Conclu | En cours}",
-  "product":       "RETAILY2",
-  "skill_updated": "{metadata.updated}",
-  "sources":       [{"type": "{Entretiens clients}", "count": 6, "detail": "{optional}"}],
-  "source_links":  [{"label": "{Entretien 3, Store Manager}", "url": "{https URL given by the PM}"}],
-  "summary":       "{5 lines max}",
+```bash
+cat > /tmp/discovery.json <<'JSON'
+{
+  "topic":    "{Topic in English}",
+  "status":   "{Conclu | En cours}",
+  "sources":  [{"type": "{Entretiens clients}", "count": 6, "detail": "{optional}"}],
+  "source_links": [{"label": "{Entretien 3, Store Manager}", "url": "{https URL given by the PM}"}],
+  "summary":  "{5 lines max}",
   "problems": [
     {
       "title":       "{need, not solution}",
@@ -128,64 +131,19 @@ data = {
       "quotes":      [{"text": "{verbatim}", "source": "{Entretien 3, Store Manager}"}]
     }
   ],
-  "unknowns":       ["{open question}"],
-  "leads":          ["{direction to explore}"],
+  "unknowns": ["{open question}"],
+  "leads":    ["{direction to explore}"],
   "recommendation": {"decision": "{Lancer une feature | Creuser | Abandonner}", "rationale": "{why}", "next_steps": ["{step}"]}
 }
-
-def norm(s):
-    s = unicodedata.normalize("NFKC", s).replace("\u2019", "'").replace("\u00a0", " ")
-    return re.sub(r"\s+", " ", s).strip().lower()
-
-errors = []
-try:
-    sources = norm(open("/tmp/discovery_sources.txt", encoding="utf-8").read())
-except FileNotFoundError:
-    sys.exit("NO SOURCES FILE: write the sources to /tmp/discovery_sources.txt first (section 2).")
-
-for p in data["problems"]:
-    for q in p.get("quotes", []):
-        if norm(q["text"]) not in sources:
-            errors.append(f"QUOTE NOT FOUND IN SOURCES: {q['text'][:80]}")
-    if p["evidence"] in ("Fort", "Moyen") and not p.get("quotes"):
-        errors.append(f"NO QUOTE for a problem with evidence {p['evidence']}: {p['title']}")
-
-text = json.dumps(data, ensure_ascii=False)
-if re.search(r"[\w.+-]+@[\w-]+\.[\w.]+", text):
-    errors.append("EMAIL FOUND: remove it (anonymization).")
-if re.search(r"(?:\+33|0)\s?[1-9](?:[\s.-]?\d{2}){4}", text):
-    errors.append("PHONE NUMBER FOUND: remove it (anonymization).")
-for l in data.get("source_links", []):
-    if not re.fullmatch(r"https://[^\s\"'<>]+", l.get("url", "")):
-        errors.append(f"INVALID SOURCE URL (https only, no spaces): {l.get('label')} -> {l.get('url')}")
-if len(data["summary"].strip().splitlines()) > 5:
-    errors.append("SUMMARY TOO LONG: 5 lines max.")
-if not data["unknowns"]:
-    errors.append("NO UNKNOWNS: list at least one open question.")
-if data["recommendation"]["decision"] not in ("Lancer une feature", "Creuser", "Abandonner"):
-    errors.append("INVALID DECISION: use Lancer une feature, Creuser or Abandonner.")
-
-if errors:
-    sys.exit("\n".join(errors))
-
-# 1. Fichier JSON : la voie fiable, toujours fourni au PM
-import os
-slug = re.sub(r"[^a-z0-9]+", "-", data["topic"].lower()).strip("-") or "report"
-os.makedirs("/mnt/user-data/outputs", exist_ok=True)
-path = f"/mnt/user-data/outputs/discovery-{slug}.json"
-with open(path, "w", encoding="utf-8") as fh:
-    json.dump(data, fh, ensure_ascii=False, indent=2)
-
-# 2. Lien : compressé, avec une somme de contrôle (c=) pour que la page détecte un lien abîmé
-raw = json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-c = zlib.compressobj(9, zlib.DEFLATED, -15)
-z = base64.urlsafe_b64encode(c.compress(raw) + c.flush()).rstrip(b"=").decode()
-crc = format(zlib.crc32(z.encode()), "08x")
-print(f"FILE: {path}")
-print(f"LINK: {PUBLISHER_URL}#c={crc}&z={z}")
+JSON
+python3 "{this skill's folder}/scripts/build.py" /tmp/discovery.json
 ```
 
-If the script reports a quote not found, fix the quote so it matches the source word for word, or remove it. Never modify the sources file to make a quote pass.
+If you do not know this skill's folder, find the script with: `find / -path '*/cegid-retail-discovery-report/scripts/build.py' -print -quit 2>/dev/null`
+
+- The JSON must be valid: escape double quotes inside texts (`\"`), and use `\n` for line breaks.
+- Add `"lang": "en"` only if the report is in English. `skill_updated` and `product` are added by the script: do not write them.
+- If the script reports a quote not found, fix the quote so it matches the source word for word, or remove it. Never modify the sources file to make a quote pass. Fix any other reported error with the PM, then run the script again.
 
 Always deliver both, every time:
 
@@ -196,4 +154,4 @@ Then add one line: the page lets the PM check the folder name (format `AAAA-MM S
 
 ## 7. After publishing
 
-If the recommendation is "Lancer une feature", offer to write the feature right away with the cegid-retail-feature-generator skill, reusing the report: context from the summary and problems, personas from the report. Do not start it without the PM's agreement.
+If the recommendation is "Lancer une feature", offer to write the feature right away with the cegid-retail-feature-generator skill, reusing the report: context from the summary and problems, personas from the report. Do not start it without the PM's agreement. If the PM agrees, ask for the reference of the published note (shown by the page after publishing, format RETAILY2-N-…): the feature will then be linked to this discovery automatically, in its Research tab.

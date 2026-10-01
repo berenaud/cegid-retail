@@ -209,6 +209,15 @@ After each generation, ask:
 
 Keep iterating until explicit validation ("ok", "good", "validated", "let's go", "c'est bon", "validé").
 
+**How to show a corrected version (saves tokens, keeps the overview)**
+- The first version is always shown in full.
+- After a correction, show:
+  - the Nom, Tags and Personas lines in full, always;
+  - every modified section in full, with "*(modifié)*" after its title;
+  - every unchanged section as a single line: its title, "inchangé", and a short summary of a few words (e.g. "**Critères d'acceptation** : inchangés, 4 critères (cas nominal, remise expirée, client inconnu, droits)").
+- If the PM asks to see everything ("montre tout", "version complète"), show the full version.
+- No need to show the full version again before generating the link: the publisher page shows a complete preview before publishing.
+
 Do not generate the publisher link before explicit validation.
 
 ## 4. Definition of Ready check
@@ -236,58 +245,35 @@ On validation (after the DoR check passes), generate the publisher URL with the 
 
 ### Step 1: build and check the payload
 
-Pass raw text fields, NOT pre-built HTML. The page builds the HTML itself, which keeps the URL compact. Run this Python snippet via bash, with the placeholders filled in:
+Pass raw text fields, NOT pre-built HTML: the page builds the HTML itself. Do not write a script: write the feature as JSON, then run the script `scripts/build.py` shipped in this skill's folder (next to this SKILL.md). It checks the payload, writes the JSON file and prints the link.
 
-```python
-import json, base64, re, sys, zlib
-
-PUBLISHER_URL = "https://berenaud.github.io/cegid-retail/aha/feature/"
-
-data = {
-  "name":          "{Domain} - {SubDomain} | {FeatureName}",
-  "tags":          ["{Tag1}", "{Tag2}"],  # one entry per tag shown to the PM, same order
-  "product":       "RETAILY2",
-  "personas":      ["{Primary persona}", "{Other persona if any}"],
-  "skill_updated": "{metadata.updated}",
-  "context":       "{context plain text}",
-  "objective":     "{objective plain text, use \\n before Résultat attendu}",
-  "included":      ["{item1}", "{item2}", "{item3}"],
-  "excluded":      ["{item1}"],
-  "mockups":       "{https link | Design à faire | Non concerné (pas d'impact visible)}",
-  "criteria":      ["{Étant donné...}", "{Étant donné...}", "{Étant donné...}"],
-  "dependencies":  "{dependencies plain text}",
-  "slices":        ["{slice1}", "{slice2}"]
+```bash
+cat > /tmp/feature.json <<'JSON'
+{
+  "name":         "{Domain} - {SubDomain} | {FeatureName}",
+  "tags":         ["{Tag1}", "{Tag2}"],
+  "personas":     ["{Primary persona}", "{Other persona if any}"],
+  "context":      "{context plain text}",
+  "objective":    "{objective plain text, \n before Résultat attendu}",
+  "included":     ["{item1}", "{item2}", "{item3}"],
+  "excluded":     ["{item1}"],
+  "mockups":      "{https link | Design à faire | Non concerné (pas d'impact visible)}",
+  "discovery":    "{reference of the source discovery note, e.g. RETAILY2-N-7}",
+  "criteria":     ["{Étant donné...}", "{Étant donné...}", "{Étant donné...}"],
+  "dependencies": "{dependencies plain text}",
+  "slices":       ["{slice1}", "{slice2}"]
 }
-
-if len(data["name"]) >= 80:
-    sys.exit(f"NAME TOO LONG: {len(data['name'])} characters, must be under 80. Shorten FeatureName.")
-if not data["personas"]:
-    sys.exit("NO PERSONA: add at least one persona from the library.")
-m = data["mockups"].strip()
-if not m:
-    sys.exit("NO MOCKUPS VALUE: give a link, 'Design à faire' or 'Non concerné (pas d'impact visible)'.")
-if m.lower().startswith("http") and not re.fullmatch(r"https://[^\s\"'<>]+", m):
-    sys.exit("INVALID MOCKUPS LINK: must be a single https URL with no text around it.")
-
-# 1. Fichier JSON : la voie de secours, toujours fournie au PM (écrit par le script, jamais recopié)
-import os
-slug = re.sub(r"[^a-z0-9]+", "-", data["name"].split("|")[-1].lower()).strip("-")[:50] or "feature"
-os.makedirs("/mnt/user-data/outputs", exist_ok=True)
-path = f"/mnt/user-data/outputs/feature-{slug}.json"
-with open(path, "w", encoding="utf-8") as fh:
-    json.dump(data, fh, ensure_ascii=False, indent=2)
-
-# 2. Lien : compressé (plus court, donc moins de risque d'erreur de recopie),
-#    avec une somme de contrôle (c=) qui permet à la page de détecter un lien abîmé
-raw = json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-c = zlib.compressobj(9, zlib.DEFLATED, -15)
-z = base64.urlsafe_b64encode(c.compress(raw) + c.flush()).rstrip(b"=").decode()
-crc = format(zlib.crc32(z.encode()), "08x")
-print(f"FILE: {path}")
-print(f"LINK: {PUBLISHER_URL}#c={crc}&z={z}")
+JSON
+python3 "{this skill's folder}/scripts/build.py" /tmp/feature.json
 ```
 
-Remove the second persona entry if there is only one persona. If the script exits with an error, fix the issue with the PM and run it again.
+If you do not know this skill's folder, find the script with: `find / -path '*/cegid-retail-feature-generator/scripts/build.py' -print -quit 2>/dev/null`
+
+- The JSON must be valid: escape double quotes inside texts (`\"`), and use `\n` for line breaks.
+- `tags`: one entry per tag shown to the PM, in the same order. `personas`: remove the second entry if there is only one persona.
+- `discovery`: keep it only if the feature comes from a discovery and the PM gave the reference of its Aha! note (format RETAILY2-N-…, shown by the Discovery Publisher page after publishing); otherwise remove the key. Never guess a reference: the PM can also pick the discovery from a list on the publisher page.
+- `skill_updated` and `product` are added by the script: do not write them.
+- The script checks the name length (under 80 characters), the personas, the mockups link and the discovery reference. If it reports errors, fix them with the PM and run it again.
 
 ### Step 2: deliver the file and the link
 
