@@ -1,7 +1,7 @@
 ---
 name: cegid-retail-feature-generator
 metadata:
-  updated: "2026-09-29"
+  updated: "2026-09-30"
 description: Generates a complete structured Aha! feature from a raw description, then produces a link to the Aha! Publisher page to push it into Aha!. Use this skill whenever a PM mentions a feature to create, a user need to formalize, a product idea to structure, or explicitly asks to "create a feature", "write an Aha! feature", "formalize a product request". Guides the user with a welcome message, fills the standard 7-section template, iterates in conversation, checks the Definition of Ready, and generates the publisher link. Also triggers on "feature", "Aha", "user story", "product ticket" in a PM context.
 ---
 
@@ -18,31 +18,87 @@ curl -fsSL --max-time 5 https://raw.githubusercontent.com/berenaud/cegid-retail/
   | grep -m1 -oE 'updated: *"?[0-9]{4}-[0-9]{2}-[0-9]{2}' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}'
 ```
 
-- If the returned date is later than `metadata.updated`, put this line at the very top of the welcome message, in the PM's language (French by default), with the date in DD/MM/YYYY format:
+- If the returned date is later than `metadata.updated`, put this line at the very top of your first reply (welcome message, or generated feature if the welcome message is skipped), in the PM's language (French by default), with the date in DD/MM/YYYY format:
   "⚠️ Une nouvelle version de ce skill est disponible (publiée le {date}). Pensez à la mettre à jour : [guide d'installation](https://github.com/berenaud/cegid-retail/blob/main/aha/feature/README.md#installer-le-skill-dans-claude)"
 - If the dates are equal, or if the check fails for any reason (no bash, no network, timeout, no date found), say nothing about it and continue normally.
 - Never mention this check otherwise, and never block the PM because of it.
 
 ## 1. Welcome message
 
-Always start with this message, no exception:
+Start with a welcome message, unless the PM's first message already contains both values (Domain, Sub-domain) and a feature description. In that case, skip the welcome message and go straight to generation (section 2). Skipping the welcome message never skips the tags: the generated feature still starts with the **Nom**, **Tags** and **Personas** lines, exactly as when the welcome message is shown.
+
+Otherwise, the welcome message content depends on whether the PM's default values are known.
+
+### Where the default values come from
+
+The skill has no built-in defaults. The values in the examples below (Back, CRM) are format examples only: never use them as the PM's values.
+
+Look for the PM's Domain and Sub-domain, in this order:
+1. The PM's first message, if it already states them.
+2. The PM's context: user preferences, memory, or project instructions. Typical form: "Aha! : Back / CRM", optionally followed by custom tags: "Aha! : Back / CRM / Tags : Domaine Back, Team CRM Fidélité" (see "Tags" below).
+
+If an older three-value form without the "Tags :" label is found (e.g. "Aha! : Back / CRM / Team CRM"), keep only the first two values and apply the default tag rule.
+
+If both values are found, use variant A. If either is missing, use variant B.
+
+### Variant A: known values
 
 ---
 
 Bonjour! I'll help you write a clean Aha! feature from your raw description.
 
-Before we start, confirm your default values:
-- **Domain** (e.g. Back)
-- **Sub-domain** (e.g. CRM)
-- **Tag** (e.g. Team CRM)
+Here are your default values:
+- **Domain**: {Domain}
+- **Sub-domain**: {SubDomain}
+- **Tags added in Aha!**: {Tag1}, {Tag2} ({source})
 
-If your usual values are correct, just say "ok". Otherwise, correct them.
+If they are correct, just say "ok". Otherwise, correct them.
+
+{tags tip}
 
 Then describe your feature in a few sentences. No need to be exhaustive, je m'occupe de la structure.
 
 ---
 
+### Variant B: unknown values
+
+---
+
+Bonjour! I'll help you write a clean Aha! feature from your raw description.
+
+First, give me your two values (e.g. "Back / CRM"):
+- **Domain** (e.g. Back)
+- **Sub-domain** (e.g. CRM)
+
+From these values, I'll add two tags in Aha!: "Domaine" + your domain and "Team" + your sub-domain (e.g. "Domaine Back" and "Team CRM"). If your team uses other tags, tell me.
+
+Tip: add them to your Claude preferences (Settings > Profile), e.g. "Aha! : Back / CRM", and I'll fill them in automatically next time. If your tags don't follow this rule, add them too: "Aha! : Back / CRM / Tags : Domaine Back, Team CRM Fidélité".
+
+Then describe your feature in a few sentences. No need to be exhaustive, je m'occupe de la structure.
+
+---
+
+In variant B, "ok" or any answer without both values is not a confirmation: ask again for the missing values, and do not generate the feature until both are given. If the PM's first message already contains a feature description, do not ask for it again: keep it and only ask for the missing values.
+
 Memorize the confirmed values for the whole session.
+
+### Tags
+
+Tags are not asked for by default. They come from one of these sources, the first found wins:
+1. **Tags given by the PM in the conversation** (e.g. "use the tag Team CRM Fidélité instead").
+2. **Custom tags in the PM's context**, after the "Tags :" label (e.g. "Aha! : Back / CRM / Tags : Domaine Back, Team CRM Fidélité"). Use them exactly as written, as many as listed.
+3. **The default rule**, derived from the confirmed values, always these two, in this order:
+   - `Domaine {Domain}` (e.g. "Domaine Back")
+   - `Team {SubDomain}` (e.g. "Team CRM")
+
+Keep tags exactly as written (same case, same spelling), with the Domain and Sub-domain exactly as the PM wrote them for the default rule.
+
+Always show the PM the tags that will be added, and where they come from:
+- In variant A, on the "Tags added in Aha!" line, with {source} = "default rule" or "from your preferences". When the source is the default rule, replace {tags tip} with: "If these tags don't match your team's, add yours to your Claude preferences: \"Aha! : {Domain} / {SubDomain} / Tags : tag1, tag2\"." Otherwise, remove {tags tip}.
+- In variant B, the message announces the rule; once the PM gives the values, confirm the actual tags in one line before generating.
+- In every generated version of the feature, on the **Tags** line (section 2).
+
+The publisher page checks that each tag already exists in Aha! and only pushes the ones it finds, so a typo never creates a wrong tag.
 
 Language rule: if the PM writes in French at any point, switch the interface to French for the rest of the session. If they write in English, keep English with the French touch. Follow the PM's language, not the other way around.
 
@@ -56,6 +112,16 @@ General rules:
 - If the raw description is insufficient on a point, make a reasonable assumption and flag it explicitly.
 
 ### Template
+
+Always display these three lines at the very top of every generated version of the feature, before Context, so the PM can check them at a glance. This applies in every case, including when the welcome message was skipped:
+
+**Nom** : `{Domain} - {SubDomain} | {FeatureName}`
+**Tags** : {Tag1}, {Tag2} ({source})
+**Personas** : {Primary persona} (principal), {Other persona}, {Other persona}
+
+The tags are those defined in section 1 "Tags". {source} is "règle par défaut", "tes préférences" or "demandé dans la conversation", like "(principal)" for personas.
+
+If there is only one persona, write it alone followed by "(principal)". Never leave the Tags line out or empty: if no tag can be determined, write "aucun" and say why. Repeat these three lines in every regenerated version during iteration.
 
 **Context**
 [2-4 sentences. What problem, gap or opportunity does this feature address? Why now, and for whom? Anchor on a real user need or identified gap.]
@@ -133,7 +199,7 @@ Use these exact personas from the Cegid Retail Y2 workspace. Pick the most relev
 | Technical Administrator | Platform configuration, integrations, connectors, API management |
 | Integration Partner | API consumer, third-party connector development |
 
-If the raw description clearly implies multiple personas, use the primary one in the Objective and mention the others in Context. All selected personas are sent to Aha! (primary first), using the exact names from this table.
+If the raw description clearly implies multiple personas, use the primary one in the Objective and mention the others in Context. All selected personas are sent to Aha! (primary first), using the exact names from this table. The personas shown in the **Personas** line of the summary must be exactly those sent in the payload, in the same order.
 
 ## 3. Iteration
 
@@ -160,6 +226,7 @@ Before generating the publisher link, silently verify each criterion below. If o
 | Dependencies | Section filled, even if "Aucune dépendance identifiée à ce stade." |
 | Vertical slices | Section filled, even if "N/A, feature déjà atomique." |
 | Personas | At least 1 persona, with an exact name from the library |
+| Summary lines | The Nom, Tags and Personas lines are displayed at the top of the feature, and the tags shown are exactly those in the payload |
 
 If all criteria pass, proceed to section 5 silently without mentioning the check.
 
@@ -178,7 +245,7 @@ PUBLISHER_URL = "https://berenaud.github.io/cegid-retail/aha/feature/"
 
 data = {
   "name":          "{Domain} - {SubDomain} | {FeatureName}",
-  "tags":          "{Tag}",
+  "tags":          ["{Tag1}", "{Tag2}"],  # one entry per tag shown to the PM, same order
   "product":       "RETAILY2",
   "personas":      ["{Primary persona}", "{Other persona if any}"],
   "skill_updated": "{metadata.updated}",

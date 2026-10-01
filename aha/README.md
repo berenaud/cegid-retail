@@ -9,14 +9,14 @@ Les deux outils partagent la même clé API Aha!, saisie une seule fois. / Both 
 
 ### Installer le skill dans Claude
 
-Ce titre est la cible des liens de mise à jour des anciennes versions des skills : ne pas le renommer. Suivre le guide de l'outil concerné :
+Suivre le guide de l'outil concerné :
 
 - [Aha! Discovery Publisher](discovery/README.md#installer-le-skill-dans-claude)
 - [Aha! Feature Publisher](feature/README.md#installer-le-skill-dans-claude)
 
 ### Installing the skill in Claude
 
-This title is the target of update links in older skill versions: do not rename it. Follow the guide of the relevant tool:
+Follow the guide of the relevant tool:
 
 - [Aha! Discovery Publisher](discovery/README.md#installing-the-skill-in-claude)
 - [Aha! Feature Publisher](feature/README.md#installing-the-skill-in-claude)

@@ -54,13 +54,12 @@ Un dossier nommé exactement **Discoveries** doit exister dans Knowledge > Docum
 
 Le titre de cette section sert de lien depuis le skill et la page : ne pas le renommer.
 
-1. Sur la page GitHub du dépôt, cliquer sur **Code** > **Download ZIP**, décompresser, puis ouvrir `aha/discovery/skill/`.
-2. Compresser le dossier `cegid-retail-discovery-report` (le dossier lui-même, avec `SKILL.md` à l'intérieur).
-3. Dans Claude, vérifier que **Settings > Capabilities > Code execution and file creation** est activé.
-4. Aller dans **Customize > Skills** (ou Settings > Capabilities, section Skills), cliquer sur **Upload skill** et choisir le zip. Vérifier qu'il est activé.
-5. Tester avec : « Je veux faire une synthèse de discovery ».
+1. Télécharger le zip de la dernière version : https://github.com/berenaud/cegid-retail/releases/download/skill-latest/cegid-retail-discovery-report.zip (lien également sur la page d'accueil du site). Ne pas le décompresser : c'est ce fichier qu'on installe. Il est reconstruit automatiquement à chaque modification du skill (workflow `Package skills`, onglet Actions).
+2. Dans Claude, vérifier que **Settings > Capabilities > Code execution and file creation** est activé.
+3. Aller dans **Customize > Skills** (ou Settings > Capabilities, section Skills), cliquer sur **Upload skill** et choisir le zip. Vérifier qu'il est activé.
+4. Tester avec : « Je veux faire une synthèse de discovery ».
 
-**Mise à jour** : supprimer l'ancienne version du skill dans Claude, puis réinstaller la nouvelle.
+**Mise à jour** : supprimer l'ancienne version du skill dans Claude, puis réinstaller le zip, qui est toujours la dernière version.
 
 ### Token Aha!
 
@@ -148,13 +147,12 @@ A folder named exactly **Discoveries** must exist in Knowledge > Documents of th
 
 The title of this section is linked from the skill and the page: do not rename it.
 
-1. On the repository's GitHub page, click **Code** > **Download ZIP**, unzip, then open `aha/discovery/skill/`.
-2. Zip the `cegid-retail-discovery-report` folder (the folder itself, with `SKILL.md` inside).
-3. In Claude, make sure **Settings > Capabilities > Code execution and file creation** is enabled.
-4. Go to **Customize > Skills** (or Settings > Capabilities, Skills section), click **Upload skill** and pick the zip. Check that it is enabled.
-5. Test with: "I want to write a discovery report".
+1. Download the latest version's zip: https://github.com/berenaud/cegid-retail/releases/download/skill-latest/cegid-retail-discovery-report.zip (also linked from the site's home page). Do not unzip it: this is the file to install. It is rebuilt automatically on every change to the skill (`Package skills` workflow, Actions tab).
+2. In Claude, make sure **Settings > Capabilities > Code execution and file creation** is enabled.
+3. Go to **Customize > Skills** (or Settings > Capabilities, Skills section), click **Upload skill** and pick the zip. Check that it is enabled.
+4. Test with: "I want to write a discovery report".
 
-**Updating**: delete the old version of the skill in Claude, then install the new one.
+**Updating**: delete the old version of the skill in Claude, then install the zip, which is always the latest version.
 
 ### Aha! token
 

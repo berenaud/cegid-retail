@@ -21,19 +21,21 @@ Pages et skills Claude pour le travail produit chez Cegid Retail. Chaque outil a
 
 ```
 cegid-retail/
+├── .github/workflows/    package-skill.yml : zips des skills publiés en release
 ├── .nojekyll             sert les fichiers tels quels (ne pas supprimer)
 ├── index.html            page d'accueil
 ├── README.md
 ├── shared/               code commun à toutes les pages outils
 │   ├── common.js         connexion Aha!, lecture des liens, versions
 │   └── style.css         styles, mode sombre compris
-├── aha/                  outils qui publient dans Aha!
-│   ├── discovery/        index.html, README.md, skill/
-│   └── feature/          index.html, README.md, skill/
-└── discovery/            redirection de l'ancienne adresse (à supprimer à terme)
+└── aha/                  outils qui publient dans Aha!
+    ├── discovery/        index.html, README.md, skill/
+    └── feature/          index.html, README.md, skill/
 ```
 
-`aha/index.html` et `discovery/index.html` redirigent les liens générés avant la réorganisation vers les nouvelles adresses. Ils pourront être supprimés quand tout le monde aura mis à jour ses skills.
+### Zips des skills
+
+À chaque modification d'un skill sur `main`, le workflow `package-skill.yml` zippe tous les skills du dépôt (tout dossier `…/skill/<nom>/` contenant un `SKILL.md`) et les publie dans la release `skill-latest`. Lien stable : `https://github.com/berenaud/cegid-retail/releases/download/skill-latest/<nom>.zip`. Un nouveau skill est pris en compte sans toucher au workflow.
 
 ### Règles du dépôt
 
@@ -65,19 +67,21 @@ Pages and Claude skills for product work at Cegid Retail. Each tool has its own 
 
 ```
 cegid-retail/
+├── .github/workflows/    package-skill.yml: skill zips published as a release
 ├── .nojekyll             serves files as is (do not delete)
 ├── index.html            home page
 ├── README.md
 ├── shared/               code shared by all tool pages
 │   ├── common.js         Aha! connection, link decoding, versions
 │   └── style.css         styles, dark mode included
-├── aha/                  tools that publish to Aha!
-│   ├── discovery/        index.html, README.md, skill/
-│   └── feature/          index.html, README.md, skill/
-└── discovery/            redirect from the old address (to be removed eventually)
+└── aha/                  tools that publish to Aha!
+    ├── discovery/        index.html, README.md, skill/
+    └── feature/          index.html, README.md, skill/
 ```
 
-`aha/index.html` and `discovery/index.html` redirect links generated before the reorganization to the new addresses. They can be deleted once everyone has updated their skills.
+### Skill zips
+
+On every change to a skill on `main`, the `package-skill.yml` workflow zips every skill in the repository (any `…/skill/<name>/` folder containing a `SKILL.md`) and publishes them in the `skill-latest` release. Stable link: `https://github.com/berenaud/cegid-retail/releases/download/skill-latest/<name>.zip`. A new skill is picked up without touching the workflow.
 
 ### Repository rules
 
