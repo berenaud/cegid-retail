@@ -1,7 +1,7 @@
 ---
-name: cegid-retail-feature-generator 
+name: cegid-retail-feature-generator
 metadata:
-  updated: "2026-09-30"
+  updated: "2026-10-01"
 description: Generates a complete structured Aha! feature from a raw description, then produces a link to the Aha! Publisher page to push it into Aha!. Use this skill whenever a PM mentions a feature to create, a user need to formalize, a product idea to structure, or explicitly asks to "create a feature", "write an Aha! feature", "formalize a product request". Guides the user with a welcome message, fills the standard 7-section template, iterates in conversation, checks the Definition of Ready, and generates the publisher link. Also triggers on "feature", "Aha", "user story", "product ticket" in a PM context.
 ---
 
@@ -239,7 +239,7 @@ On validation (after the DoR check passes), generate the publisher URL with the 
 Pass raw text fields, NOT pre-built HTML. The page builds the HTML itself, which keeps the URL compact. Run this Python snippet via bash, with the placeholders filled in:
 
 ```python
-import json, base64, re, sys
+import json, base64, re, sys, zlib
 
 PUBLISHER_URL = "https://berenaud.github.io/cegid-retail/aha/feature/"
 
@@ -269,18 +269,33 @@ if not m:
 if m.lower().startswith("http") and not re.fullmatch(r"https://[^\s\"'<>]+", m):
     sys.exit("INVALID MOCKUPS LINK: must be a single https URL with no text around it.")
 
-encoded = base64.urlsafe_b64encode(
-    json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-).rstrip(b"=").decode()
-print(f"{PUBLISHER_URL}#data={encoded}")
+# 1. Fichier JSON : la voie de secours, toujours fournie au PM (écrit par le script, jamais recopié)
+import os
+slug = re.sub(r"[^a-z0-9]+", "-", data["name"].split("|")[-1].lower()).strip("-")[:50] or "feature"
+os.makedirs("/mnt/user-data/outputs", exist_ok=True)
+path = f"/mnt/user-data/outputs/feature-{slug}.json"
+with open(path, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, ensure_ascii=False, indent=2)
+
+# 2. Lien : compressé (plus court, donc moins de risque d'erreur de recopie),
+#    avec une somme de contrôle (c=) qui permet à la page de détecter un lien abîmé
+raw = json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+c = zlib.compressobj(9, zlib.DEFLATED, -15)
+z = base64.urlsafe_b64encode(c.compress(raw) + c.flush()).rstrip(b"=").decode()
+crc = format(zlib.crc32(z.encode()), "08x")
+print(f"FILE: {path}")
+print(f"LINK: {PUBLISHER_URL}#c={crc}&z={z}")
 ```
 
 Remove the second persona entry if there is only one persona. If the script exits with an error, fix the issue with the PM and run it again.
 
-### Step 2: present the link
+### Step 2: deliver the file and the link
 
-Say: "Et voilà : [Open in Aha! Publisher](GENERATED_URL)"
+Always deliver both, every time:
 
-Then add one line: the publisher page lets the PM pick the release, and optionally the epic and initiative, before pushing to Aha!.
+1. **The link**: "Et voilà : [Ouvrir dans Aha! Publisher](LINK)", where LINK is the URL printed after `LINK:`. Copy it exactly as printed, in one go, character for character: never retype from memory, shorten, reformat or "fix" it.
+2. **The file**: share the JSON file printed after `FILE:` as a downloadable file.
+
+Then add one line: the publisher page lets the PM pick the release, and optionally the epic and initiative, before pushing to Aha!. If the page says the link is damaged, the PM drops the JSON file on the page: it holds exactly the same feature.
 
 Only if the PM explicitly asks for a manual import instead, offer a CSV export.

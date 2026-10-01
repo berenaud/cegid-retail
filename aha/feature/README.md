@@ -47,7 +47,7 @@ sequenceDiagram
 En détail :
 
 1. Dans Claude, le skill aide le PM à rédiger la feature, vérifie la Definition of Ready, puis génère un lien vers la page.
-2. La feature est encodée dans le lien, après `#data=`. Cette partie n'est jamais envoyée au serveur : la feature ne transite pas par GitHub.
+2. La feature est compressée dans le lien, après `#z=`, avec une somme de contrôle (`#c=`) qui permet à la page de détecter un lien abîmé. Cette partie n'est jamais envoyée au serveur : la feature ne transite pas par GitHub. Claude fournit aussi la feature en fichier `.json`, à déposer sur la page si le lien ne passe pas.
 3. La page récupère les releases, épics, initiatives et personas du produit via l'API de `cegid.aha.io`.
 4. Le PM choisit la release (et si besoin l'épic et l'initiative), puis clique sur « Push to Aha! ». La feature est créée à son nom.
 
@@ -112,7 +112,8 @@ Si la page elle-même semble ancienne après une mise à jour : rechargement for
 
 - **Erreur 401** : clé API invalide ou expirée. Cliquer sur « Changer de token ».
 - **Erreur réseau** : vérifier la connexion, puis ouvrir la console du navigateur (F12).
-- **Écran « pas de données »** : le lien a été tronqué ou copié sans sa partie `#data=`. Le régénérer depuis le skill.
+- **Écran « Lien incomplet ou abîmé »** : le lien a été altéré en route. Déposer sur la page le fichier `.json` fourni par Claude avec le lien : il contient exactement la même feature.
+- **Écran « Aucune feature à publier »** : la page a été ouverte sans lien. Même solution : déposer le fichier `.json`.
 
 ### Maintenance
 
@@ -122,7 +123,7 @@ Si la page elle-même semble ancienne après une mise à jour : rechargement for
 
 ### Format des données
 
-Le lien contient un JSON encodé en base64url (UTF-8) :
+Le fichier `.json` contient l'objet ci-dessous. Dans le lien, ce même JSON est compressé (deflate brut) puis encodé en base64url, après `#z=` :
 
 ```json
 {
@@ -185,7 +186,7 @@ sequenceDiagram
 In detail:
 
 1. In Claude, the skill helps the PM write the feature, checks the Definition of Ready, then generates a link to the page.
-2. The feature is encoded in the link, after `#data=`. This part is never sent to the server: the feature never goes through GitHub.
+2. The feature is compressed in the link, after `#z=`, with a checksum (`#c=`) that lets the page detect a damaged link. This part is never sent to the server: the feature never goes through GitHub. Claude also provides the feature as a `.json` file, to drop on the page if the link fails.
 3. The page fetches the product's releases, epics, initiatives and personas from the `cegid.aha.io` API.
 4. The PM picks the release (and optionally the epic and initiative), then clicks "Push to Aha!". The feature is created under their name.
 
@@ -250,7 +251,8 @@ If the page itself looks outdated after an update: hard reload with **Ctrl+Shift
 
 - **401 error**: invalid or expired API key. Click "Change token".
 - **Network error**: check your connection, then open the browser console (F12).
-- **"No data" screen**: the link was truncated or copied without its `#data=` part. Generate it again from the skill.
+- **"Incomplete or damaged link" screen**: the link was altered on the way. Drop on the page the `.json` file provided by Claude with the link: it holds exactly the same feature.
+- **"No feature data" screen**: the page was opened without a link. Same fix: drop the `.json` file.
 
 ### Maintenance
 
@@ -260,7 +262,7 @@ If the page itself looks outdated after an update: hard reload with **Ctrl+Shift
 
 ### Data format
 
-The link contains a base64url-encoded (UTF-8) JSON object:
+The `.json` file contains the object below. In the link, the same JSON is compressed (raw deflate) then base64url-encoded, after `#z=`:
 
 ```json
 {

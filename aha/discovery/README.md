@@ -45,6 +45,7 @@ En détail :
 2. Le skill vérifie que chaque verbatim existe mot pour mot dans les sources fournies, et bloque s'il trouve un email ou un numéro de téléphone.
 3. La page crée un dossier `AAAA-MM Sujet` dans **Knowledge > Documents > Discoveries**, puis la note du rapport à l'intérieur. Si un dossier du même nom existe déjà, le rapport y est ajouté.
 4. Si le même lien a déjà été publié depuis ce navigateur, la page le signale pour éviter un doublon.
+5. Les liens vers les documents sources (enregistrements, comptes rendus, tickets) sont cliquables dans la note Aha!, ainsi que la source de chaque verbatim quand elle correspond à un document.
 
 ### Prérequis dans Aha!
 
@@ -89,6 +90,7 @@ JSON compressé (deflate brut) puis encodé en base64url, après `#z=` :
   "product": "RETAILY2",
   "skill_updated": "2026-09-29",
   "sources": [{"type": "Entretiens clients", "count": 6, "detail": "…"}],
+  "source_links": [{"label": "Entretien 3, Store Manager", "url": "https://…"}],
   "summary": "…",
   "problems": [{"title": "…", "description": "…", "personas": ["Store Manager"], "frequency": "5/8 sources",
                 "impact": "Fort", "evidence": "Fort", "quotes": [{"text": "…", "source": "Entretien 3, Store Manager"}]}],
@@ -139,6 +141,7 @@ In detail:
 2. The skill checks that each quote exists word for word in the sources provided, and blocks if it finds an email or a phone number.
 3. The page creates a `YYYY-MM Topic` folder in **Knowledge > Documents > Discoveries**, then the report note inside it. If a folder with the same name already exists, the report is added to it.
 4. If the same link was already published from this browser, the page says so to avoid a duplicate.
+5. Links to source documents (recordings, minutes, tickets) are clickable in the Aha! note, as is the source of each quote when it matches a document.
 
 ### Prerequisites in Aha!
 

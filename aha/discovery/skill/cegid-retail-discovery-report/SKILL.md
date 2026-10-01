@@ -33,6 +33,7 @@ Bonjour ! Je vais transformer ton matériel de discovery en un rapport clair, à
 Donne-moi :
 - **Le sujet** en quelques mots (ex. « renouvellement des conditions commerciales »)
 - **Tes sources** : notes d'entretiens, comptes rendus de visites, transcriptions d'ateliers, tickets… Colle-les ou joins les fichiers, en indiquant pour chacune d'où elle vient (ex. « Entretien 3, Store Manager »).
+- **Les liens** vers tes sources, si elles en ont (enregistrement Teams, compte rendu SharePoint, ticket…) : ils seront cliquables dans le rapport Aha!.
 - **Les noms d'enseignes** : je les garde ou je les anonymise (« Client A », « Client B ») ?
 
 ---
@@ -70,6 +71,7 @@ Generate the report in the PM's language (French by default), with these parts:
 1. **Sujet (topic)**: short and specific, in English, used for the Aha! folder name (e.g. "Commercial conditions renew"). Not a generic theme like "CRM": what distinguishes this discovery from another on the same theme.
 2. **Statut**: "Conclu" or "En cours".
 3. **Sources**: type, count, optional detail (e.g. 6 "Entretiens clients", "Store Managers, 4 enseignes").
+   **Source documents**: for every source the PM gave a URL for, a label and the URL (e.g. "Entretien 3, Store Manager" → its SharePoint link). Use as label the exact same text as the `source` of the quotes taken from it: the page then makes those quote sources clickable too. Only use URLs the PM actually gave, copied exactly: never invent, guess or complete a URL. If the PM gave no URL, leave the list empty, and ask once, before generating the link, whether some sources have one.
 4. **Résumé**: 5 lines maximum. The main problem, who it affects, the evidence, the recommendation. It must stand on its own: it is often the only part people read.
 5. **Problèmes identifiés**: for each one, a title, a description (2-4 sentences), personas, frequency, impact, evidence level, and 1-3 verbatim quotes.
 6. **Ce qu'on ne sait pas encore**: open questions and hypotheses to validate.
@@ -93,6 +95,7 @@ Before generating the link, silently check:
 | Unknowns | At least 1 |
 | Recommendation | Decision among the 3 allowed values, rationale, at least 1 next step |
 | Anonymization | No person names, emails or phone numbers |
+| Source links | Every URL the PM gave is in the source documents, exactly as given, https only |
 
 If a criterion fails, say what to fix. If all pass, go to section 6 without mentioning the check.
 
@@ -112,6 +115,7 @@ data = {
   "product":       "RETAILY2",
   "skill_updated": "{metadata.updated}",
   "sources":       [{"type": "{Entretiens clients}", "count": 6, "detail": "{optional}"}],
+  "source_links":  [{"label": "{Entretien 3, Store Manager}", "url": "{https URL given by the PM}"}],
   "summary":       "{5 lines max}",
   "problems": [
     {
@@ -151,6 +155,9 @@ if re.search(r"[\w.+-]+@[\w-]+\.[\w.]+", text):
     errors.append("EMAIL FOUND: remove it (anonymization).")
 if re.search(r"(?:\+33|0)\s?[1-9](?:[\s.-]?\d{2}){4}", text):
     errors.append("PHONE NUMBER FOUND: remove it (anonymization).")
+for l in data.get("source_links", []):
+    if not re.fullmatch(r"https://[^\s\"'<>]+", l.get("url", "")):
+        errors.append(f"INVALID SOURCE URL (https only, no spaces): {l.get('label')} -> {l.get('url')}")
 if len(data["summary"].strip().splitlines()) > 5:
     errors.append("SUMMARY TOO LONG: 5 lines max.")
 if not data["unknowns"]:
@@ -175,21 +182,17 @@ c = zlib.compressobj(9, zlib.DEFLATED, -15)
 z = base64.urlsafe_b64encode(c.compress(raw) + c.flush()).rstrip(b"=").decode()
 crc = format(zlib.crc32(z.encode()), "08x")
 print(f"FILE: {path}")
-print(f"LINK: {PUBLISHER_URL}#z={z}&c={crc}")
+print(f"LINK: {PUBLISHER_URL}#c={crc}&z={z}")
 ```
 
 If the script reports a quote not found, fix the quote so it matches the source word for word, or remove it. Never modify the sources file to make a quote pass.
 
-Then deliver both, in this order:
+Always deliver both, every time:
 
-1. **The file**: share the JSON file printed after `FILE:` with the PM (present it as a downloadable file).
-2. **The link**: "Et voilà : [Publier dans Aha!](LINK)", where LINK is the URL printed after `LINK:`.
+1. **The link**: "Et voilà : [Publier dans Aha!](LINK)", where LINK is the URL printed after `LINK:`. Copy it exactly as printed, in one go, character for character: never retype from memory, shorten, reformat or "fix" it.
+2. **The file**: share the JSON file printed after `FILE:` as a downloadable file.
 
-The link is long and must be reproduced character for character, including the final `&c=…`: never retype, shorten, reformat or "fix" it. If a single character changes, the page detects it (thanks to `c=`) and shows "Lien abîmé".
-
-Then add, in two short lines:
-- the page lets the PM check the folder name (format `AAAA-MM Sujet`, created in Discoveries) before publishing;
-- if the page says the link is damaged, the PM just drops the JSON file on the page: it contains exactly the same report.
+Then add one line: the page lets the PM check the folder name (format `AAAA-MM Sujet`, created in Discoveries) before publishing. If the page says the link is damaged, the PM drops the JSON file on the page: it holds exactly the same report.
 
 ## 7. After publishing
 
